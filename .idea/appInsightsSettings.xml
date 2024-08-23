@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.example.elplanner" />
+                  <option name="mobileSdkAppId" value="1:652103685217:android:553a2b25bdf7ce18524620" />
+                  <option name="projectId" value="el-planner" />
+                  <option name="projectNumber" value="652103685217" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
