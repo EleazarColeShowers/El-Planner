@@ -88,6 +88,7 @@ class MainActivity : ComponentActivity() {
                             composable("Carousel") { Carousel(navController= navController) }
                             composable("Welcome"){ WelcomePage(navController)}
                             composable("CreateAccount"){ CreateAccountPage(auth)}
+                            composable("Login"){ LoginPage(auth) }
                         }
                     }
                 }
@@ -317,7 +318,7 @@ fun WelcomePage(navController: NavController) {
                             .background(Color(0xFF8875FF), shape = RoundedCornerShape(20.dp))
                             .padding(horizontal = 25.dp)
                             .height(40.dp)
-                            .clickable { },
+                            .clickable {navController.navigate("Login") },
                         horizontalAlignment = Alignment.CenterHorizontally,
                         verticalArrangement = Arrangement.Center
                     ) {
@@ -480,6 +481,98 @@ fun CreateAccountPage(auth: FirebaseAuth){
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun LoginPage(auth: FirebaseAuth){
+
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
+    val context= LocalContext.current
+
+    Column(modifier = Modifier.fillMaxSize()){
+        Spacer(modifier = Modifier.padding(53.dp))
+        Text(
+            text = "Login",
+            style = TextStyle(
+                color = Color.White,
+                fontSize = 32.sp,
+                fontWeight = FontWeight.Bold
+            ),
+            modifier = Modifier.padding(start = 24.dp)
+
+
+        )
+        Spacer(modifier = Modifier.height(23.dp))
+        OutlinedTextField(
+            value = email,
+            onValueChange = { email = it },
+            label = { Text("Email") },
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .align(Alignment.CenterHorizontally),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color.White,
+                focusedBorderColor = Color(0xFF8875FF),
+                unfocusedBorderColor = Color(0xFF8875FF)
+            ),
+            textStyle = TextStyle(
+                color = Color.White
+            )
+        )
+        Spacer(modifier = Modifier.height(25.dp))
+        OutlinedTextField(
+            value = password,
+            onValueChange = { password = it },
+            label = { Text("Password") },
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .align(Alignment.CenterHorizontally),
+            colors = TextFieldDefaults.outlinedTextFieldColors(
+                focusedLabelColor = Color.White,
+                unfocusedLabelColor = Color.White,
+                focusedBorderColor = Color(0xFF8875FF),
+                unfocusedBorderColor = Color(0xFF8875FF)
+            ),
+            textStyle = TextStyle(
+                color = Color.White
+            )
+        )
+        Spacer(modifier = Modifier.height(80.dp))
+        Box(
+            modifier = Modifier.fillMaxWidth().padding(bottom = 17.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .background(Color(0xFF8875FF), shape = RoundedCornerShape(20.dp))
+                    .padding(horizontal = 25.dp)
+                    .height(40.dp)
+                    .clickable{
+                        performLogin(auth, context as ComponentActivity, email, password, onSuccess = { username ->
+                            val intent = Intent(context, HomeActivity::class.java)
+                            intent.putExtra("username", username)
+                            context.startActivity(intent)
+                        })
+                    },
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
+                Text(
+                    text = "Login",
+                    style = TextStyle(
+                        color = Color.White,
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium
+                    ),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
+}
+
 fun performSignUp(auth: FirebaseAuth, context: ComponentActivity, email: String, password: String, usernameTxt: String, onSuccess: () -> Unit) {
     if (email.isEmpty() || password.isEmpty() || usernameTxt.isEmpty()) {
         Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
@@ -490,14 +583,13 @@ fun performSignUp(auth: FirebaseAuth, context: ComponentActivity, email: String,
         if (task.isSuccessful) {
             createUser(username= usernameTxt)
                 val uid = auth.currentUser?.uid
-                // Save additional user details to Firestore
                 createUser(username = String.toString())
 
             val intent = Intent(context, HomeActivity::class.java)
             context.startActivity(intent)
 
             Toast.makeText(context, "Successfully sign up", Toast.LENGTH_SHORT).show()
-            onSuccess() // Call the success callback
+            onSuccess()
         } else {
             Toast.makeText(context, "Authentication failed.", Toast.LENGTH_SHORT).show()
         }
@@ -518,3 +610,62 @@ fun createUser(username: String) {
         Log.d("###","data failed ${it.message}")
     }
 }
+
+
+fun performLogin(
+    auth: FirebaseAuth,
+    context: ComponentActivity,
+    email: String,
+    password: String,
+    onSuccess: (String) -> Unit,  // Accept a callback with user ID and optional URI
+) {
+    if (email.isEmpty() || password.isEmpty()) {
+        Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    auth.signInWithEmailAndPassword(email, password)
+        .addOnCompleteListener(context) { task ->
+            if (task.isSuccessful) {
+                val user = auth.currentUser
+                if (user != null) {
+                    val userId = user.uid
+                    onSuccess(userId)
+
+                }
+
+
+                Toast.makeText(context, "Successfully logged in", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(context, "Authentication failed.", Toast.LENGTH_SHORT).show()
+            }
+        }
+        .addOnFailureListener {
+            Toast.makeText(context, "Error Occurred ${it.localizedMessage}", Toast.LENGTH_SHORT).show()
+        }
+}
+
+//fun fetchUserProfile(
+//    userId: String,
+//    onSuccess: (String, Uri?) -> Unit,
+//) {
+//    val database = FirebaseDatabase.getInstance().reference
+//    val userRef = database.child("users").child(userId)
+//
+//    userRef.get().addOnCompleteListener { task ->
+//        if (task.isSuccessful) {
+//            val snapshot = task.result
+//            if (snapshot.exists()) {
+//                val username = snapshot.child("username").getValue(String::class.java) ?: ""
+//                val profileImageUriString = snapshot.child("profileImageUri").getValue(String::class.java)
+//                val profileImageUri = profileImageUriString?.let { Uri.parse(it) }
+//
+//                onSuccess(username, profileImageUri)  // Callback with data
+//            } else {
+////                onFailure(Exception("User data not found"))  // Handle no data case
+//            }
+//        } else {
+////            task.exception?.let { onFailure(it) }  // Handle retrieval failure
+//        }
+//    }
+//}
