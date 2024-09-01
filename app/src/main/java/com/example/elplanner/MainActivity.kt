@@ -156,6 +156,7 @@ fun Carousel(
     contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp),
     navController: NavController
 ) {
+    //TODO 1: Fix height change between CarouselItem 1 and 2,3
     val pagerState = rememberPagerState()
 
     Column(
@@ -623,7 +624,6 @@ fun performLogin(
         Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
         return
     }
-
     auth.signInWithEmailAndPassword(email, password)
         .addOnCompleteListener(context) { task ->
             if (task.isSuccessful) {
@@ -633,8 +633,6 @@ fun performLogin(
                     onSuccess(userId)
 
                 }
-
-
                 Toast.makeText(context, "Successfully logged in", Toast.LENGTH_SHORT).show()
             } else {
                 Toast.makeText(context, "Authentication failed.", Toast.LENGTH_SHORT).show()
@@ -644,28 +642,3 @@ fun performLogin(
             Toast.makeText(context, "Error Occurred ${it.localizedMessage}", Toast.LENGTH_SHORT).show()
         }
 }
-
-//fun fetchUserProfile(
-//    userId: String,
-//    onSuccess: (String, Uri?) -> Unit,
-//) {
-//    val database = FirebaseDatabase.getInstance().reference
-//    val userRef = database.child("users").child(userId)
-//
-//    userRef.get().addOnCompleteListener { task ->
-//        if (task.isSuccessful) {
-//            val snapshot = task.result
-//            if (snapshot.exists()) {
-//                val username = snapshot.child("username").getValue(String::class.java) ?: ""
-//                val profileImageUriString = snapshot.child("profileImageUri").getValue(String::class.java)
-//                val profileImageUri = profileImageUriString?.let { Uri.parse(it) }
-//
-//                onSuccess(username, profileImageUri)  // Callback with data
-//            } else {
-////                onFailure(Exception("User data not found"))  // Handle no data case
-//            }
-//        } else {
-////            task.exception?.let { onFailure(it) }  // Handle retrieval failure
-//        }
-//    }
-//}

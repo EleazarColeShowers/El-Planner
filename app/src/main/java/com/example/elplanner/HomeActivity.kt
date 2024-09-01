@@ -1,9 +1,12 @@
 package com.example.elplanner
 
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -12,6 +15,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -20,10 +24,16 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.Icon
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -48,8 +58,14 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import com.example.elplanner.ui.theme.ElPlannerTheme
+import java.time.DayOfWeek
+import java.time.LocalDate
+import java.time.YearMonth
+import java.util.Locale
+
 
 class HomeActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -75,6 +91,7 @@ class HomeActivity : ComponentActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun Index() {
     val navController = rememberNavController()
@@ -88,7 +105,8 @@ fun Index() {
             HomePage()
             NavHost(navController = navController, startDestination = "EmptyPage") {
                 composable("EmptyPage") { EmptyPage() }
-                composable("AddTask"){ AddTask()}
+                composable("AddTask"){ AddTask(navController)}
+                composable("DateTime"){ DateTime()}
             }
         }
         BottomBar(navController)
@@ -239,9 +257,13 @@ fun BottomBar(navController: NavController) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTask() {
+fun AddTask(navController: NavController) {
     var task by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
+    val setTime= painterResource(id = R.drawable.focusicon)
+    val flagTask= painterResource(id = R.drawable.priorityflag)
+    val saveTask= painterResource(id =R.drawable.send)
+    val tagTask = painterResource(id = R.drawable.tag)
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -253,7 +275,7 @@ fun AddTask() {
                 .height(250.dp)
                 .background(Color(0xFF363636))
                 .padding(10.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
+//            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Text(
@@ -278,8 +300,9 @@ fun AddTask() {
                     unfocusedBorderColor = Color.White
                 ),
                 textStyle = TextStyle(
-                    color = Color.White
-                )
+                    color = Color.White,
+                ),
+
             )
             Spacer(modifier = Modifier.height(5.dp))
             OutlinedTextField(
@@ -298,7 +321,225 @@ fun AddTask() {
                     color = Color.White
                 )
             )
+            Spacer(modifier = Modifier.height(15.dp))
+            Row(modifier= Modifier.fillMaxWidth()){
+                Image(
+                    painter = setTime,
+                    contentDescription = null,
+                    modifier= Modifier
+                        .size(24.dp)
+                        .clickable { navController.navigate("DateTime") }
+                )
+                Spacer(modifier = Modifier.width(24.dp))
+                Image(
+                    painter = tagTask,
+                    contentDescription = null,
+                    modifier= Modifier
+                        .size(24.dp)
+                        .clickable { }
+                )
+                Spacer(modifier = Modifier.width(24.dp))
+                Image(
+                    painter = flagTask,
+                    contentDescription = null,
+                    modifier= Modifier
+                        .size(24.dp)
+                        .clickable { }
+                )
+                Spacer(modifier = Modifier.weight(1f))
+                Image(
+                    painter = saveTask,
+                    contentDescription = null,
+                    modifier= Modifier
+                        .size(24.dp)
+                        .clickable { }
+                )
+            }
+        }
+    }
+}
 
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun DateTime(){
+    Box(
+        modifier = Modifier
+            .fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .height(450.dp)
+                .background(Color(0xFF363636))
+                .padding(10.dp),
+            verticalArrangement = Arrangement.Center
+        ) {
+            CalendarView()
+            Row (
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier.fillMaxWidth()
+            ){
+                Column(
+                    modifier = Modifier
+                        .width(153.dp)
+                        .background(Color.Transparent, shape = RoundedCornerShape(10.dp))
+                        .padding(horizontal = 25.dp)
+                        .height(40.dp)
+                        .clickable {
+
+                        },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Cancel",
+                        style = TextStyle(
+                            color = Color(0xFF8875FF),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                }
+                Column(
+                    modifier = Modifier
+                        .width(153.dp)
+                        .background(Color(0xFF8875FF), shape = RoundedCornerShape(10.dp))
+                        .padding(horizontal = 25.dp)
+                        .height(40.dp)
+                        .clickable {
+
+                        },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Choose Time",
+                        style = TextStyle(
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun CalendarView() {
+    var currentMonth by remember { mutableStateOf(YearMonth.now()) }
+    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+    val today = LocalDate.now()
+
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF1F1F1F)) // Darker black background
+    ) {
+        // TODO 2: Onclick of date, it should be saved, not go back to login
+        // Month Navigation
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            IconButton(onClick = { currentMonth = currentMonth.minusMonths(1) }) {
+                Icon(
+                    imageVector = Icons.Default.ArrowBack,
+                    contentDescription = "Previous Month",
+                    tint = Color.White
+                )
+            }
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = currentMonth.month.name.lowercase().replaceFirstChar { it.uppercase() },
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    textAlign = TextAlign.Center
+                )
+                Text(
+                    text = "${currentMonth.year}",
+                    color = Color.White,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 10.sp,
+                    textAlign = TextAlign.Center
+                )
+            }
+            IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
+                Icon(
+                    imageVector = Icons.Default.ArrowForward,
+                    contentDescription = "Next Month",
+                    tint = Color.White
+                )
+            }
+        }
+        val daysOfWeek = remember { DayOfWeek.entries.toTypedArray() }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            for (dayOfWeek in daysOfWeek) {
+                Box(
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = dayOfWeek.name.take(3),
+                        color = Color.White,
+                        fontSize = 10.sp
+                    )
+                }
+            }
+        }
+        val firstDayOfMonth = currentMonth.atDay(1).dayOfWeek
+        val daysInMonth = currentMonth.lengthOfMonth()
+        var day = 1
+        for (week in 0..5) {
+            Row(modifier = Modifier.fillMaxWidth()) {
+                for (dayOfWeek in daysOfWeek) {
+                    Box(
+                        modifier = Modifier
+                            .weight(1f)
+                            .aspectRatio(1f)
+                            .padding(3.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        if (week == 0 && dayOfWeek < firstDayOfMonth || day > daysInMonth) {
+                            Spacer(modifier = Modifier.fillMaxSize())
+                        } else {
+                            Box(
+                                modifier = Modifier
+                                    .background(
+                                        when {
+                                            today == currentMonth.atDay(day) -> Color(0xFF8875FF) // Highlight current day
+                                            selectedDate == currentMonth.atDay(day) -> Color(
+                                                0xFF8875FF
+                                            )
+                                            else -> Color.Transparent
+                                        }
+                                    )
+                                    .padding(3.dp)
+                            ) {
+                                Text(
+                                    text = day.toString(),
+                                    color = Color.White,
+                                    modifier = Modifier
+                                        .clickable {
+                                            selectedDate = currentMonth.atDay(day)
+                                        },
+                                    fontSize = 12.sp
+                                )
+                            }
+                            day++
+                        }
+                    }
+                }
+            }
         }
     }
 }
