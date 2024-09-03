@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
@@ -46,6 +48,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -106,7 +109,8 @@ fun Index() {
             NavHost(navController = navController, startDestination = "EmptyPage") {
                 composable("EmptyPage") { EmptyPage() }
                 composable("AddTask"){ AddTask(navController)}
-                composable("DateTime"){ DateTime()}
+                composable("DateTime"){ DateTime(navController)}
+                composable("TimeView"){ TimeView()}
             }
         }
         BottomBar(navController)
@@ -361,7 +365,7 @@ fun AddTask(navController: NavController) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun DateTime(){
+fun DateTime(navController: NavController){
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -375,7 +379,9 @@ fun DateTime(){
                 .padding(10.dp),
             verticalArrangement = Arrangement.Center
         ) {
-            CalendarView()
+            CalendarView(onDateSelected = {
+
+            })
             Row (
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 modifier = Modifier.fillMaxWidth()
@@ -387,7 +393,7 @@ fun DateTime(){
                         .padding(horizontal = 25.dp)
                         .height(40.dp)
                         .clickable {
-
+                            navController.popBackStack()
                         },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -409,7 +415,7 @@ fun DateTime(){
                         .padding(horizontal = 25.dp)
                         .height(40.dp)
                         .clickable {
-
+                            navController.navigate("TimeView")
                         },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -431,7 +437,7 @@ fun DateTime(){
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun CalendarView() {
+fun CalendarView(onDateSelected: (String) -> Unit) {
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
     val today = LocalDate.now()
@@ -439,10 +445,7 @@ fun CalendarView() {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .background(Color(0xFF1F1F1F)) // Darker black background
     ) {
-        // TODO 2: Onclick of date, it should be saved, not go back to login
-        // Month Navigation
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -481,7 +484,8 @@ fun CalendarView() {
                 )
             }
         }
-        val daysOfWeek = remember { DayOfWeek.entries.toTypedArray() }
+
+        val daysOfWeek = remember { DayOfWeek.values() }
         Row(modifier = Modifier.fillMaxWidth()) {
             for (dayOfWeek in daysOfWeek) {
                 Box(
@@ -496,6 +500,7 @@ fun CalendarView() {
                 }
             }
         }
+
         val firstDayOfMonth = currentMonth.atDay(1).dayOfWeek
         val daysInMonth = currentMonth.lengthOfMonth()
         var day = 1
@@ -512,26 +517,26 @@ fun CalendarView() {
                         if (week == 0 && dayOfWeek < firstDayOfMonth || day > daysInMonth) {
                             Spacer(modifier = Modifier.fillMaxSize())
                         } else {
+                            val date = currentMonth.atDay(day)
                             Box(
                                 modifier = Modifier
                                     .background(
                                         when {
-                                            today == currentMonth.atDay(day) -> Color(0xFF8875FF) // Highlight current day
-                                            selectedDate == currentMonth.atDay(day) -> Color(
-                                                0xFF8875FF
-                                            )
+                                            today == date -> Color(0xFF8875FF) // Highlight current day
+                                            selectedDate == date -> Color(0xFF8875FF) // Highlight selected day
                                             else -> Color.Transparent
                                         }
                                     )
                                     .padding(3.dp)
+                                    .clickable {
+                                        selectedDate = date
+                                        // Trigger the lambda to pass the selected date
+                                        onDateSelected("${date.dayOfMonth}, ${date.monthValue}, ${date.year}")
+                                    }
                             ) {
                                 Text(
                                     text = day.toString(),
                                     color = Color.White,
-                                    modifier = Modifier
-                                        .clickable {
-                                            selectedDate = currentMonth.atDay(day)
-                                        },
                                     fontSize = 12.sp
                                 )
                             }
@@ -539,6 +544,190 @@ fun CalendarView() {
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+fun TimeView() {
+    Box(
+        modifier = Modifier
+            .fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .height(350.dp)  // Adjusted height to accommodate the time picker
+                .background(Color(0xFF363636))
+                .padding(10.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Choose Time",
+                style = TextStyle(
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                ),
+            )
+
+            // Digital Time Picker
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 20.dp),  // Space between "Choose Time" and time picker
+                horizontalArrangement = Arrangement.Center
+            ) {
+                TimeSelector()
+            }
+
+            // Row with Cancel and Save buttons
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .width(153.dp)
+                        .background(Color.Transparent, shape = RoundedCornerShape(10.dp))
+                        .padding(horizontal = 25.dp)
+                        .height(40.dp)
+                        .clickable {
+                            // Handle Cancel click
+                        },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Cancel",
+                        style = TextStyle(
+                            color = Color(0xFF8875FF),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                }
+                Column(
+                    modifier = Modifier
+                        .width(153.dp)
+                        .background(Color(0xFF8875FF), shape = RoundedCornerShape(10.dp))
+                        .padding(horizontal = 25.dp)
+                        .height(40.dp)
+                        .clickable {
+                            // Handle Save click
+                        },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Save",
+                        style = TextStyle(
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TimeSelector() {
+    val hours = (1..12).toList()
+    val minutes = (0..59).toList()
+    val amPm = listOf("AM", "PM")
+
+    var selectedHour by remember { mutableStateOf(hours.first()) }
+    var selectedMinute by remember { mutableStateOf(minutes.first()) }
+    var selectedAmPm by remember { mutableStateOf(amPm.first()) }
+
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // Hours
+        NumberPicker(
+            items = hours,
+            selectedItem = selectedHour,
+            onItemSelected = { selectedHour = it }
+        )
+
+        Text(
+            text = ":",
+            color = Color.White,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            modifier = Modifier.padding(horizontal = 8.dp)
+        )
+
+        // Minutes
+        NumberPicker(
+            items = minutes,
+            selectedItem = selectedMinute,
+            onItemSelected = { selectedMinute = it }
+        )
+
+        Spacer(modifier = Modifier.width(16.dp))
+
+        // AM/PM
+        NumberPicker(
+            items = amPm,
+            selectedItem = selectedAmPm,
+            onItemSelected = { selectedAmPm = it }
+        )
+    }
+}
+
+@Composable
+fun <T> NumberPicker(
+    items: List<T>,
+    selectedItem: T,
+    onItemSelected: (T) -> Unit
+) {
+    // Apply a gradient to fade out the top and bottom items
+    val gradient = Brush.verticalGradient(
+        colors = listOf(
+            Color.Transparent,
+            Color(0x80000000),
+            Color.Black,
+            Color(0x80000000),
+            Color.Transparent
+        ),
+        startY = 0f,
+        endY = 150f
+    )
+
+    Box(
+        modifier = Modifier
+            .width(60.dp)
+            .height(150.dp) // Adjust height as necessary
+            .background(gradient)
+    ) {
+        LazyColumn(
+            modifier = Modifier
+                .width(60.dp)
+                .height(150.dp),  // Adjust height as necessary
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            itemsIndexed(items) { _, item ->
+                Text(
+                    text = item.toString(),
+                    color = if (item == selectedItem) Color.White else Color.Gray,
+                    fontSize = if (item == selectedItem) 24.sp else 18.sp,
+                    fontWeight = if (item == selectedItem) FontWeight.Bold else FontWeight.Normal,
+                    modifier = Modifier
+                        .padding(vertical = 8.dp)
+                        .clickable { onItemSelected(item) }
+                )
             }
         }
     }
