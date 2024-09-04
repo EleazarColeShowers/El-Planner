@@ -1,6 +1,5 @@
 package com.example.elplanner
 
-import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -23,23 +22,27 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.text.BasicText
+//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.BottomNavigation
+//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.BottomNavigationItem
+//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.Icon
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TimeInput
+import androidx.compose.material3.darkColorScheme
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -48,7 +51,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -56,15 +58,17 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.elplanner.data.TaskViewModel
 import com.example.elplanner.ui.theme.ElPlannerTheme
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
-import java.util.Locale
+import java.util.Calendar
 
 
 class HomeActivity : ComponentActivity() {
@@ -110,7 +114,7 @@ fun Index() {
                 composable("EmptyPage") { EmptyPage() }
                 composable("AddTask"){ AddTask(navController)}
                 composable("DateTime"){ DateTime(navController)}
-                composable("TimeView"){ TimeView()}
+                composable("TimeView"){ TimeView(navController)}
             }
         }
         BottomBar(navController)
@@ -261,9 +265,7 @@ fun BottomBar(navController: NavController) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTask(navController: NavController) {
-    var task by remember { mutableStateOf("") }
-    var description by remember { mutableStateOf("") }
+fun AddTask(navController: NavController, taskViewModel: TaskViewModel = viewModel()) {
     val setTime= painterResource(id = R.drawable.focusicon)
     val flagTask= painterResource(id = R.drawable.priorityflag)
     val saveTask= painterResource(id =R.drawable.send)
@@ -292,8 +294,8 @@ fun AddTask(navController: NavController) {
                 modifier = Modifier.padding(bottom = 12.dp)
             )
             OutlinedTextField(
-                value = task,
-                onValueChange = { task = it },
+                value = taskViewModel.task,
+                onValueChange = { taskViewModel.task = it },
                 label = { Text("Task") },
                 modifier = Modifier
                     .fillMaxWidth(0.9f),
@@ -310,8 +312,8 @@ fun AddTask(navController: NavController) {
             )
             Spacer(modifier = Modifier.height(5.dp))
             OutlinedTextField(
-                value = description,
-                onValueChange = { description = it },
+                value = taskViewModel.description,
+                onValueChange = { taskViewModel.description = it },
                 label = { Text("Description (Optional)") },
                 modifier = Modifier
                     .fillMaxWidth(0.9f),
@@ -365,10 +367,11 @@ fun AddTask(navController: NavController) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun DateTime(navController: NavController){
+fun DateTime(navController: NavController, taskViewModel: TaskViewModel = viewModel()) {
+    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+
     Box(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Column(
@@ -379,13 +382,14 @@ fun DateTime(navController: NavController){
                 .padding(10.dp),
             verticalArrangement = Arrangement.Center
         ) {
-            CalendarView(onDateSelected = {
-
+            CalendarView(onDateSelected = { date ->
+                selectedDate = date
             })
-            Row (
+
+            Row(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 modifier = Modifier.fillMaxWidth()
-            ){
+            ) {
                 Column(
                     modifier = Modifier
                         .width(153.dp)
@@ -408,6 +412,7 @@ fun DateTime(navController: NavController){
                         textAlign = TextAlign.Center
                     )
                 }
+
                 Column(
                     modifier = Modifier
                         .width(153.dp)
@@ -415,7 +420,11 @@ fun DateTime(navController: NavController){
                         .padding(horizontal = 25.dp)
                         .height(40.dp)
                         .clickable {
-                            navController.navigate("TimeView")
+                            // Navigate to TimeView and pass the selected date
+                            selectedDate?.let {
+                                navController.currentBackStackEntry?.savedStateHandle?.set("selectedDate", it)
+                                navController.navigate("TimeView")
+                            }
                         },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -437,15 +446,18 @@ fun DateTime(navController: NavController){
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun CalendarView(onDateSelected: (String) -> Unit) {
+fun CalendarView(onDateSelected: (LocalDate) -> Unit) {
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
     val today = LocalDate.now()
 
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
+        modifier = Modifier.fillMaxWidth()
     ) {
+        // Month navigation row
+        // Days of the week row
+        // Date selection grid
+
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -484,29 +496,12 @@ fun CalendarView(onDateSelected: (String) -> Unit) {
                 )
             }
         }
-
-        val daysOfWeek = remember { DayOfWeek.values() }
-        Row(modifier = Modifier.fillMaxWidth()) {
-            for (dayOfWeek in daysOfWeek) {
-                Box(
-                    modifier = Modifier.weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = dayOfWeek.name.take(3),
-                        color = Color.White,
-                        fontSize = 10.sp
-                    )
-                }
-            }
-        }
-
         val firstDayOfMonth = currentMonth.atDay(1).dayOfWeek
         val daysInMonth = currentMonth.lengthOfMonth()
         var day = 1
         for (week in 0..5) {
             Row(modifier = Modifier.fillMaxWidth()) {
-                for (dayOfWeek in daysOfWeek) {
+                for (dayOfWeek in DayOfWeek.entries) {
                     Box(
                         modifier = Modifier
                             .weight(1f)
@@ -522,16 +517,15 @@ fun CalendarView(onDateSelected: (String) -> Unit) {
                                 modifier = Modifier
                                     .background(
                                         when {
-                                            today == date -> Color(0xFF8875FF) // Highlight current day
-                                            selectedDate == date -> Color(0xFF8875FF) // Highlight selected day
+                                            today == date -> Color(0xFF8875FF)
+                                            selectedDate == date -> Color(0xFF8875FF)
                                             else -> Color.Transparent
                                         }
                                     )
                                     .padding(3.dp)
                                     .clickable {
                                         selectedDate = date
-                                        // Trigger the lambda to pass the selected date
-                                        onDateSelected("${date.dayOfMonth}, ${date.monthValue}, ${date.year}")
+                                        onDateSelected(date)
                                     }
                             ) {
                                 Text(
@@ -550,16 +544,18 @@ fun CalendarView(onDateSelected: (String) -> Unit) {
 }
 
 @Composable
-fun TimeView() {
+fun TimeView(navController: NavController, taskViewModel: TaskViewModel = viewModel()) {
+    val selectedDate = navController.previousBackStackEntry?.savedStateHandle?.get<LocalDate>("selectedDate")
+    var selectedTime by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+
     Box(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth(0.9f)
-                .height(350.dp)  // Adjusted height to accommodate the time picker
+                .height(250.dp)
                 .background(Color(0xFF363636))
                 .padding(10.dp),
             verticalArrangement = Arrangement.Center,
@@ -574,17 +570,17 @@ fun TimeView() {
                 ),
             )
 
-            // Digital Time Picker
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 20.dp),  // Space between "Choose Time" and time picker
+                    .padding(vertical = 20.dp),
                 horizontalArrangement = Arrangement.Center
             ) {
-                TimeSelector()
+                DigitalTime(onTimeSelected = { hour, minute ->
+                    selectedTime = Pair(hour, minute)
+                })
             }
 
-            // Row with Cancel and Save buttons
             Row(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 modifier = Modifier.fillMaxWidth()
@@ -596,7 +592,7 @@ fun TimeView() {
                         .padding(horizontal = 25.dp)
                         .height(40.dp)
                         .clickable {
-                            // Handle Cancel click
+                            navController.popBackStack()
                         },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -611,6 +607,7 @@ fun TimeView() {
                         textAlign = TextAlign.Center
                     )
                 }
+
                 Column(
                     modifier = Modifier
                         .width(153.dp)
@@ -618,7 +615,16 @@ fun TimeView() {
                         .padding(horizontal = 25.dp)
                         .height(40.dp)
                         .clickable {
-                            // Handle Save click
+                            selectedTime?.let { time ->
+                                taskViewModel.selectedTime= time.toString()
+                                taskViewModel.selectedTime = taskViewModel.getDateTime()
+                                val finalDateTime = "$selectedDate ${time.first}:${time.second}"
+                                // Save finalDateTime and navigate back to Add Task screen
+                                navController.popBackStack("AddTask", false)
+                                // Pass the finalDateTime back to the Add Task screen
+                                navController.currentBackStackEntry?.savedStateHandle?.set("finalDateTime", finalDateTime)
+                            }
+
                         },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -638,97 +644,40 @@ fun TimeView() {
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun TimeSelector() {
-    val hours = (1..12).toList()
-    val minutes = (0..59).toList()
-    val amPm = listOf("AM", "PM")
+fun DigitalTime(onTimeSelected: (Int, Int) -> Unit) {
+    MyAppTheme {
+        val currentTime = Calendar.getInstance()
 
-    var selectedHour by remember { mutableStateOf(hours.first()) }
-    var selectedMinute by remember { mutableStateOf(minutes.first()) }
-    var selectedAmPm by remember { mutableStateOf(amPm.first()) }
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.Center,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        // Hours
-        NumberPicker(
-            items = hours,
-            selectedItem = selectedHour,
-            onItemSelected = { selectedHour = it }
+        val timePickerState = rememberTimePickerState(
+            initialHour = currentTime.get(Calendar.HOUR_OF_DAY),
+            initialMinute = currentTime.get(Calendar.MINUTE),
+            is24Hour = true,
         )
 
-        Text(
-            text = ":",
-            color = Color.White,
-            fontSize = 24.sp,
-            fontWeight = FontWeight.Bold,
-            modifier = Modifier.padding(horizontal = 8.dp)
-        )
+        Column {
+            TimeInput(
+                state = timePickerState,
+            )
 
-        // Minutes
-        NumberPicker(
-            items = minutes,
-            selectedItem = selectedMinute,
-            onItemSelected = { selectedMinute = it }
-        )
-
-        Spacer(modifier = Modifier.width(16.dp))
-
-        // AM/PM
-        NumberPicker(
-            items = amPm,
-            selectedItem = selectedAmPm,
-            onItemSelected = { selectedAmPm = it }
-        )
-    }
-}
-
-@Composable
-fun <T> NumberPicker(
-    items: List<T>,
-    selectedItem: T,
-    onItemSelected: (T) -> Unit
-) {
-    // Apply a gradient to fade out the top and bottom items
-    val gradient = Brush.verticalGradient(
-        colors = listOf(
-            Color.Transparent,
-            Color(0x80000000),
-            Color.Black,
-            Color(0x80000000),
-            Color.Transparent
-        ),
-        startY = 0f,
-        endY = 150f
-    )
-
-    Box(
-        modifier = Modifier
-            .width(60.dp)
-            .height(150.dp) // Adjust height as necessary
-            .background(gradient)
-    ) {
-        LazyColumn(
-            modifier = Modifier
-                .width(60.dp)
-                .height(150.dp),  // Adjust height as necessary
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
-        ) {
-            itemsIndexed(items) { _, item ->
-                Text(
-                    text = item.toString(),
-                    color = if (item == selectedItem) Color.White else Color.Gray,
-                    fontSize = if (item == selectedItem) 24.sp else 18.sp,
-                    fontWeight = if (item == selectedItem) FontWeight.Bold else FontWeight.Normal,
-                    modifier = Modifier
-                        .padding(vertical = 8.dp)
-                        .clickable { onItemSelected(item) }
-                )
-            }
+            onTimeSelected(timePickerState.hour, timePickerState.minute)
         }
     }
+}
+@Composable
+fun MyAppTheme(content: @Composable () -> Unit) {
+    MaterialTheme(
+        colorScheme = darkColorScheme(
+            primary = Color(0xFFBB86FC),
+            secondary = Color(0xFF03DAC6),
+            background = Color(0xFF121212),
+            surface = Color(0xFF121212),
+            onPrimary = Color.White,
+            onSecondary = Color.Black,
+            onBackground = Color.White,
+            onSurface = Color.White,
+        ),
+        content = content
+    )
 }
