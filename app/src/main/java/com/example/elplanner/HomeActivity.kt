@@ -51,6 +51,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -102,7 +103,6 @@ class HomeActivity : ComponentActivity() {
 @Composable
 fun Index() {
     val navController = rememberNavController()
-
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -115,6 +115,7 @@ fun Index() {
                 composable("AddTask"){ AddTask(navController)}
                 composable("DateTime"){ DateTime(navController)}
                 composable("TimeView"){ TimeView(navController)}
+                composable("PriorityFlag"){ PriorityFlag(navController)}
             }
         }
         BottomBar(navController)
@@ -350,7 +351,9 @@ fun AddTask(navController: NavController, taskViewModel: TaskViewModel = viewMod
                     contentDescription = null,
                     modifier= Modifier
                         .size(24.dp)
-                        .clickable { }
+                        .clickable {
+                            navController.navigate("PriorityFlag")
+                        }
                 )
                 Spacer(modifier = Modifier.weight(1f))
                 Image(
@@ -422,7 +425,10 @@ fun DateTime(navController: NavController, taskViewModel: TaskViewModel = viewMo
                         .clickable {
                             // Navigate to TimeView and pass the selected date
                             selectedDate?.let {
-                                navController.currentBackStackEntry?.savedStateHandle?.set("selectedDate", it)
+                                navController.currentBackStackEntry?.savedStateHandle?.set(
+                                    "selectedDate",
+                                    it
+                                )
                                 navController.navigate("TimeView")
                             }
                         },
@@ -616,13 +622,16 @@ fun TimeView(navController: NavController, taskViewModel: TaskViewModel = viewMo
                         .height(40.dp)
                         .clickable {
                             selectedTime?.let { time ->
-                                taskViewModel.selectedTime= time.toString()
+                                taskViewModel.selectedTime = time.toString()
                                 taskViewModel.selectedTime = taskViewModel.getDateTime()
                                 val finalDateTime = "$selectedDate ${time.first}:${time.second}"
                                 // Save finalDateTime and navigate back to Add Task screen
                                 navController.popBackStack("AddTask", false)
                                 // Pass the finalDateTime back to the Add Task screen
-                                navController.currentBackStackEntry?.savedStateHandle?.set("finalDateTime", finalDateTime)
+                                navController.currentBackStackEntry?.savedStateHandle?.set(
+                                    "finalDateTime",
+                                    finalDateTime
+                                )
                             }
 
                         },
@@ -681,3 +690,147 @@ fun MyAppTheme(content: @Composable () -> Unit) {
         content = content
     )
 }
+
+@Composable
+fun PriorityFlag(navController: NavController) {
+    val priorityFlag = painterResource(id = R.drawable.priorityflag)
+
+    // Track the selected column index
+    var selectedColumn by remember { mutableStateOf(-1) }
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .height(360.dp)
+                .background(Color(0xFF363636))
+                .padding(10.dp),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                text = "Task Priority",
+                style = TextStyle(
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            )
+            Spacer(modifier = Modifier.height(22.dp))
+
+            // Helper function to create the column with onClick
+            @Composable
+            fun PriorityColumn(index: Int, number: String) {
+                val backgroundColor = if (selectedColumn == index) Color(0xFF8875FF) else Color(0xFF272727)
+
+                Column(
+                    modifier = Modifier
+                        .size(64.dp)
+                        .background(backgroundColor)
+                        .clip(RoundedCornerShape(8.dp))
+                        .clickable { selectedColumn = index }, // Update selected column
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    Spacer(modifier = Modifier.height(7.dp))
+                    Image(
+                        painter = priorityFlag,
+                        contentDescription = null,
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.height(5.dp))
+                    Text(
+                        text = number,
+                        color = Color.White,
+                        style = TextStyle(fontSize = 16.sp)
+                    )
+                }
+            }
+
+            // Create rows with priority columns
+            Row(
+                modifier = Modifier.fillMaxWidth(0.9f),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                PriorityColumn(index = 0, number = "1")
+                PriorityColumn(index = 1, number = "2")
+                PriorityColumn(index = 2, number = "3")
+                PriorityColumn(index = 3, number = "4")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(0.9f),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                PriorityColumn(index = 4, number = "5")
+                PriorityColumn(index = 5, number = "6")
+                PriorityColumn(index = 6, number = "7")
+                PriorityColumn(index = 7, number = "8")
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Row(
+                modifier = Modifier.fillMaxWidth(0.9f),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                PriorityColumn(index = 8, number = "9")
+                PriorityColumn(index = 9, number = "10")
+            }
+            Spacer(modifier = Modifier.height(18.dp))
+            Row(
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(
+                    modifier = Modifier
+                        .width(153.dp)
+                        .background(Color.Transparent, shape = RoundedCornerShape(10.dp))
+                        .padding(horizontal = 25.dp)
+                        .height(40.dp)
+                        .clickable {
+                            navController.popBackStack()
+                        },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Cancel",
+                        style = TextStyle(
+                            color = Color(0xFF8875FF),
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                }
+
+                Column(
+                    modifier = Modifier
+                        .width(153.dp)
+                        .background(Color(0xFF8875FF), shape = RoundedCornerShape(10.dp))
+                        .padding(horizontal = 25.dp)
+                        .height(40.dp)
+                        .clickable {},
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Save",
+                        style = TextStyle(
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                }
+            }
+        }
+    }
+}
+
