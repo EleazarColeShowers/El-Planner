@@ -10,6 +10,7 @@ class TaskViewModel : ViewModel() {
     var description by mutableStateOf("")
     var selectedDate by mutableStateOf("")
     var selectedTime by mutableStateOf("")
+    var selectedPriority by mutableStateOf(-1)
 
     fun getDateTime(): String {
         return "$selectedDate $selectedTime"

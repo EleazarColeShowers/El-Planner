@@ -2,6 +2,7 @@ package com.example.elplanner
 
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -22,6 +23,8 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 //noinspection UsingMaterialAndMaterial3Libraries
@@ -53,6 +56,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -70,7 +74,6 @@ import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.Calendar
-
 
 class HomeActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -115,7 +118,8 @@ fun Index() {
                 composable("AddTask"){ AddTask(navController)}
                 composable("DateTime"){ DateTime(navController)}
                 composable("TimeView"){ TimeView(navController)}
-                composable("PriorityFlag"){ PriorityFlag(navController)}
+                composable("PriorityFlag"){ PriorityFlag(navController, viewModel = TaskViewModel())}
+                composable("TaskPage"){ TaskPage(taskViewModel = TaskViewModel()) }
             }
         }
         BottomBar(navController)
@@ -263,7 +267,6 @@ fun BottomBar(navController: NavController) {
     }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTask(navController: NavController, taskViewModel: TaskViewModel = viewModel()) {
@@ -271,6 +274,8 @@ fun AddTask(navController: NavController, taskViewModel: TaskViewModel = viewMod
     val flagTask= painterResource(id = R.drawable.priorityflag)
     val saveTask= painterResource(id =R.drawable.send)
     val tagTask = painterResource(id = R.drawable.tag)
+    val context = LocalContext.current
+
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -361,7 +366,20 @@ fun AddTask(navController: NavController, taskViewModel: TaskViewModel = viewMod
                     contentDescription = null,
                     modifier= Modifier
                         .size(24.dp)
-                        .clickable { }
+                        .clickable {
+                            if (taskViewModel.task.isNotEmpty() && taskViewModel.selectedDate.isNotEmpty() && taskViewModel.selectedTime.isNotEmpty()) {
+                                // Navigate to TaskPage
+                                navController.navigate("TaskPage")
+                            }else{
+                                val errorMessage = when {
+                                    taskViewModel.task.isEmpty() -> "Task cannot be empty"
+                                    taskViewModel.selectedTime.isEmpty() -> "Please select a time"
+                                    taskViewModel.selectedDate.isEmpty() -> "Please select a date"
+                                    else -> "Please fill in all required fields"
+                                }
+                                Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
+                            }
+                        }
                 )
             }
         }
@@ -429,6 +447,7 @@ fun DateTime(navController: NavController, taskViewModel: TaskViewModel = viewMo
                                     "selectedDate",
                                     it
                                 )
+                                taskViewModel.selectedDate = it.toString()
                                 navController.navigate("TimeView")
                             }
                         },
@@ -623,7 +642,7 @@ fun TimeView(navController: NavController, taskViewModel: TaskViewModel = viewMo
                         .clickable {
                             selectedTime?.let { time ->
                                 taskViewModel.selectedTime = time.toString()
-                                taskViewModel.selectedTime = taskViewModel.getDateTime()
+                                taskViewModel.selectedTime = selectedTime.toString()
                                 val finalDateTime = "$selectedDate ${time.first}:${time.second}"
                                 // Save finalDateTime and navigate back to Add Task screen
                                 navController.popBackStack("AddTask", false)
@@ -674,6 +693,7 @@ fun DigitalTime(onTimeSelected: (Int, Int) -> Unit) {
         }
     }
 }
+
 @Composable
 fun MyAppTheme(content: @Composable () -> Unit) {
     MaterialTheme(
@@ -692,10 +712,9 @@ fun MyAppTheme(content: @Composable () -> Unit) {
 }
 
 @Composable
-fun PriorityFlag(navController: NavController) {
+fun PriorityFlag(navController: NavController, viewModel: TaskViewModel) {
     val priorityFlag = painterResource(id = R.drawable.priorityflag)
 
-    // Track the selected column index
     var selectedColumn by remember { mutableStateOf(-1) }
 
     Box(
@@ -721,7 +740,6 @@ fun PriorityFlag(navController: NavController) {
             )
             Spacer(modifier = Modifier.height(22.dp))
 
-            // Helper function to create the column with onClick
             @Composable
             fun PriorityColumn(index: Int, number: String) {
                 val backgroundColor = if (selectedColumn == index) Color(0xFF8875FF) else Color(0xFF272727)
@@ -749,7 +767,6 @@ fun PriorityFlag(navController: NavController) {
                 }
             }
 
-            // Create rows with priority columns
             Row(
                 modifier = Modifier.fillMaxWidth(0.9f),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
@@ -815,7 +832,12 @@ fun PriorityFlag(navController: NavController) {
                         .background(Color(0xFF8875FF), shape = RoundedCornerShape(10.dp))
                         .padding(horizontal = 25.dp)
                         .height(40.dp)
-                        .clickable {},
+                        .clickable {
+                            if (selectedColumn != -1) {
+                                viewModel.selectedPriority = selectedColumn + 1
+                                navController.popBackStack()
+                            }
+                        },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
                 ) {
@@ -828,6 +850,38 @@ fun PriorityFlag(navController: NavController) {
                         ),
                         textAlign = TextAlign.Center
                     )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun TaskPage(taskViewModel: TaskViewModel = viewModel()){
+    Column(
+        modifier=Modifier.fillMaxWidth(0.9f).padding(top=50.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ){
+        LazyColumn(modifier= Modifier.fillMaxWidth()){
+            item {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color(0xFF363636))
+                        .padding(16.dp)
+                ){
+                    Column {
+                        Text(
+                            text= taskViewModel.task,
+                            color = Color.White,
+                            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                            )
+                        Text(
+                            text= taskViewModel.getDateTime(),
+                            color = Color.White,
+                            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        )
+                    }
                 }
             }
         }
