@@ -2,7 +2,7 @@ package com.example.elplanner
 
 import android.os.Build
 import android.os.Bundle
-import android.widget.Toast
+import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -24,7 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 //noinspection UsingMaterialAndMaterial3Libraries
@@ -47,6 +47,7 @@ import androidx.compose.material3.TimeInput
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -65,13 +66,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.elplanner.data.TaskItem
 import com.example.elplanner.data.TaskViewModel
 import com.example.elplanner.ui.theme.ElPlannerTheme
 import java.time.DayOfWeek
 import java.time.LocalDate
+import java.time.LocalTime
 import java.time.YearMonth
 import java.util.Calendar
 
@@ -92,7 +96,6 @@ class HomeActivity : ComponentActivity() {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-
                             Index()
                         }
                     }
@@ -119,7 +122,7 @@ fun Index() {
                 composable("DateTime"){ DateTime(navController)}
                 composable("TimeView"){ TimeView(navController)}
                 composable("PriorityFlag"){ PriorityFlag(navController, viewModel = TaskViewModel())}
-                composable("TaskPage"){ TaskPage(taskViewModel = TaskViewModel()) }
+                composable("TaskPage"){ TaskPage(navController, viewModel = TaskViewModel())}
             }
         }
         BottomBar(navController)
@@ -129,7 +132,6 @@ fun Index() {
 @Composable
 fun HomePage() {
     val menu = painterResource(id = R.drawable.menu)
-
     Column(
         modifier = Modifier
             .fillMaxWidth(0.9f)
@@ -147,8 +149,6 @@ fun HomePage() {
                     .size(42.dp)
                     .align(Alignment.CenterVertically)
             )
-
-
             Text(
                 text = "Index",
                 style = TextStyle(
@@ -267,15 +267,11 @@ fun BottomBar(navController: NavController) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTask(navController: NavController, taskViewModel: TaskViewModel = viewModel()) {
-    val setTime= painterResource(id = R.drawable.focusicon)
-    val flagTask= painterResource(id = R.drawable.priorityflag)
-    val saveTask= painterResource(id =R.drawable.send)
-    val tagTask = painterResource(id = R.drawable.tag)
     val context = LocalContext.current
-
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -287,7 +283,6 @@ fun AddTask(navController: NavController, taskViewModel: TaskViewModel = viewMod
                 .height(250.dp)
                 .background(Color(0xFF363636))
                 .padding(10.dp),
-//            horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Center
         ) {
             Text(
@@ -299,6 +294,7 @@ fun AddTask(navController: NavController, taskViewModel: TaskViewModel = viewMod
                 ),
                 modifier = Modifier.padding(bottom = 12.dp)
             )
+
             OutlinedTextField(
                 value = taskViewModel.task,
                 onValueChange = { taskViewModel.task = it },
@@ -335,52 +331,34 @@ fun AddTask(navController: NavController, taskViewModel: TaskViewModel = viewMod
             )
             Spacer(modifier = Modifier.height(15.dp))
             Row(modifier= Modifier.fillMaxWidth()){
-                Image(
-                    painter = setTime,
-                    contentDescription = null,
-                    modifier= Modifier
-                        .size(24.dp)
-                        .clickable { navController.navigate("DateTime") }
-                )
-                Spacer(modifier = Modifier.width(24.dp))
-                Image(
-                    painter = tagTask,
-                    contentDescription = null,
-                    modifier= Modifier
-                        .size(24.dp)
-                        .clickable { }
-                )
-                Spacer(modifier = Modifier.width(24.dp))
-                Image(
-                    painter = flagTask,
-                    contentDescription = null,
-                    modifier= Modifier
-                        .size(24.dp)
+                Column(
+                    modifier = Modifier
+                        .width(153.dp)
+                        .background(Color(0xFF8875FF), shape = RoundedCornerShape(10.dp))
+                        .padding(horizontal = 25.dp)
+                        .height(40.dp)
                         .clickable {
-                            navController.navigate("PriorityFlag")
-                        }
-                )
-                Spacer(modifier = Modifier.weight(1f))
-                Image(
-                    painter = saveTask,
-                    contentDescription = null,
-                    modifier= Modifier
-                        .size(24.dp)
-                        .clickable {
-                            if (taskViewModel.task.isNotEmpty() && taskViewModel.selectedDate.isNotEmpty() && taskViewModel.selectedTime.isNotEmpty()) {
-                                // Navigate to TaskPage
-                                navController.navigate("TaskPage")
-                            }else{
-                                val errorMessage = when {
-                                    taskViewModel.task.isEmpty() -> "Task cannot be empty"
-                                    taskViewModel.selectedTime.isEmpty() -> "Please select a time"
-                                    taskViewModel.selectedDate.isEmpty() -> "Please select a date"
-                                    else -> "Please fill in all required fields"
-                                }
-                                Toast.makeText(context, errorMessage, Toast.LENGTH_SHORT).show()
-                            }
-                        }
-                )
+                            navController.currentBackStackEntry?.savedStateHandle?.set(
+                                "task", taskViewModel.task
+                            )
+                            navController.currentBackStackEntry?.savedStateHandle?.set(
+                                "description", taskViewModel.description
+                            )
+                            navController.navigate("DateTime")
+                        },
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.Center
+                ) {
+                    Text(
+                        text = "Choose Date",
+                        style = TextStyle(
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium
+                        ),
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
     }
@@ -389,6 +367,8 @@ fun AddTask(navController: NavController, taskViewModel: TaskViewModel = viewMod
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun DateTime(navController: NavController, taskViewModel: TaskViewModel = viewModel()) {
+    val task = navController.previousBackStackEntry?.savedStateHandle?.get<String>("task")
+    val description = navController.previousBackStackEntry?.savedStateHandle?.get<String>("description")
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
 
     Box(
@@ -441,13 +421,13 @@ fun DateTime(navController: NavController, taskViewModel: TaskViewModel = viewMo
                         .padding(horizontal = 25.dp)
                         .height(40.dp)
                         .clickable {
-                            // Navigate to TimeView and pass the selected date
-                            selectedDate?.let {
-                                navController.currentBackStackEntry?.savedStateHandle?.set(
-                                    "selectedDate",
-                                    it
-                                )
-                                taskViewModel.selectedDate = it.toString()
+                            selectedDate?.let { date ->
+                                // Save task, description, and date to the savedStateHandle
+                                navController.currentBackStackEntry?.savedStateHandle?.set("task", task)
+                                navController.currentBackStackEntry?.savedStateHandle?.set("description", description)
+                                navController.currentBackStackEntry?.savedStateHandle?.set("selectedDate", date.toString())
+
+                                // Navigate to TimeView
                                 navController.navigate("TimeView")
                             }
                         },
@@ -479,10 +459,6 @@ fun CalendarView(onDateSelected: (LocalDate) -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
-        // Month navigation row
-        // Days of the week row
-        // Date selection grid
-
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -568,9 +544,12 @@ fun CalendarView(onDateSelected: (LocalDate) -> Unit) {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TimeView(navController: NavController, taskViewModel: TaskViewModel = viewModel()) {
-    val selectedDate = navController.previousBackStackEntry?.savedStateHandle?.get<LocalDate>("selectedDate")
+    val task = navController.previousBackStackEntry?.savedStateHandle?.get<String>("task")
+    val description = navController.previousBackStackEntry?.savedStateHandle?.get<String>("description")
+    val selectedDate = navController.previousBackStackEntry?.savedStateHandle?.get<String>("selectedDate")
     var selectedTime by remember { mutableStateOf<Pair<Int, Int>?>(null) }
 
     Box(
@@ -632,7 +611,6 @@ fun TimeView(navController: NavController, taskViewModel: TaskViewModel = viewMo
                         textAlign = TextAlign.Center
                     )
                 }
-
                 Column(
                     modifier = Modifier
                         .width(153.dp)
@@ -641,18 +619,22 @@ fun TimeView(navController: NavController, taskViewModel: TaskViewModel = viewMo
                         .height(40.dp)
                         .clickable {
                             selectedTime?.let { time ->
-                                taskViewModel.selectedTime = time.toString()
-                                taskViewModel.selectedTime = selectedTime.toString()
-                                val finalDateTime = "$selectedDate ${time.first}:${time.second}"
-                                // Save finalDateTime and navigate back to Add Task screen
-                                navController.popBackStack("AddTask", false)
-                                // Pass the finalDateTime back to the Add Task screen
-                                navController.currentBackStackEntry?.savedStateHandle?.set(
-                                    "finalDateTime",
-                                    finalDateTime
-                                )
-                            }
+                                val timeString = "${time.first}:${time.second}"
 
+                                navController.currentBackStackEntry?.savedStateHandle?.set("task", task)
+                                navController.currentBackStackEntry?.savedStateHandle?.set("description", description)
+                                navController.currentBackStackEntry?.savedStateHandle?.set(
+                                    "selectedTime",
+                                    timeString
+                                )
+                                selectedDate?.let { date ->
+                                    navController.currentBackStackEntry?.savedStateHandle?.set(
+                                        "selectedDate",
+                                        date
+                                    )
+                                }
+                                navController.navigate("PriorityFlag")
+                            }
                         },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -672,6 +654,7 @@ fun TimeView(navController: NavController, taskViewModel: TaskViewModel = viewMo
     }
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DigitalTime(onTimeSelected: (Int, Int) -> Unit) {
@@ -683,12 +666,10 @@ fun DigitalTime(onTimeSelected: (Int, Int) -> Unit) {
             initialMinute = currentTime.get(Calendar.MINUTE),
             is24Hour = true,
         )
-
         Column {
             TimeInput(
                 state = timePickerState,
             )
-
             onTimeSelected(timePickerState.hour, timePickerState.minute)
         }
     }
@@ -713,8 +694,12 @@ fun MyAppTheme(content: @Composable () -> Unit) {
 
 @Composable
 fun PriorityFlag(navController: NavController, viewModel: TaskViewModel) {
-    val priorityFlag = painterResource(id = R.drawable.priorityflag)
+    val task = navController.previousBackStackEntry?.savedStateHandle?.get<String>("task")
+    val description = navController.previousBackStackEntry?.savedStateHandle?.get<String>("description")
+    val selectedDate = navController.previousBackStackEntry?.savedStateHandle?.get<String>("selectedDate")
+    val selectedTime = navController.previousBackStackEntry?.savedStateHandle?.get<String>("selectedTime")
 
+    val priorityFlag = painterResource(id = R.drawable.priorityflag)
     var selectedColumn by remember { mutableStateOf(-1) }
 
     Box(
@@ -835,8 +820,18 @@ fun PriorityFlag(navController: NavController, viewModel: TaskViewModel) {
                         .clickable {
                             if (selectedColumn != -1) {
                                 viewModel.selectedPriority = selectedColumn + 1
-                                navController.popBackStack()
+
+                                navController.currentBackStackEntry?.savedStateHandle?.set("task", task)
+                                navController.currentBackStackEntry?.savedStateHandle?.set("description", description)
+                                navController.currentBackStackEntry?.savedStateHandle?.set("selectedDate", selectedDate)
+                                navController.currentBackStackEntry?.savedStateHandle?.set("selectedTime", selectedTime)
+                                navController.currentBackStackEntry?.savedStateHandle?.set("priorityFlag", selectedColumn + 1)
+
+                                navController.navigate("TaskPage")
+
                             }
+                            Log.d("AddTask", "Selected Date: $selectedDate, Selected Time: $selectedTime")
+                            Log.d("AddTask", "Task: $task, Description: $description, priorityflag: $priorityFlag")
                         },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -857,34 +852,72 @@ fun PriorityFlag(navController: NavController, viewModel: TaskViewModel) {
 }
 
 @Composable
-fun TaskPage(taskViewModel: TaskViewModel = viewModel()){
-    Column(
-        modifier=Modifier.fillMaxWidth(0.9f).padding(top=50.dp),
-        horizontalAlignment = Alignment.CenterHorizontally
-    ){
-        LazyColumn(modifier= Modifier.fillMaxWidth()){
-            item {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0xFF363636))
-                        .padding(16.dp)
-                ){
-                    Column {
-                        Text(
-                            text= taskViewModel.task,
-                            color = Color.White,
-                            style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                            )
-                        Text(
-                            text= taskViewModel.getDateTime(),
-                            color = Color.White,
-                            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                        )
-                    }
-                }
+fun TaskPage(navController: NavController, viewModel: TaskViewModel) {
+    val task = navController.previousBackStackEntry?.savedStateHandle?.get<String>("task")
+    val description = navController.previousBackStackEntry?.savedStateHandle?.get<String>("description")
+    val selectedDate = navController.previousBackStackEntry?.savedStateHandle?.get<String>("selectedDate")
+    val selectedTime = navController.previousBackStackEntry?.savedStateHandle?.get<String>("selectedTime")
+    val priorityFlag = navController.previousBackStackEntry?.savedStateHandle?.get<Int>("priorityFlag")
+    Log.d("AddTask", "Task: $task, Description: $description, priorityflag: $priorityFlag")
+
+//    task?.let {
+//        viewModel.addTask(it, description, selectedDate ?: "", selectedTime ?: "", priorityFlag)
+//    }
+    LaunchedEffect(task) {
+        if (!task.isNullOrEmpty()) {
+            viewModel.addTask(task, description, selectedDate ?: "", selectedTime ?: "", priorityFlag)
+            // Clear the saved state to avoid adding the same task again
+            navController.previousBackStackEntry?.savedStateHandle?.apply {
+                remove<String>("task")
+                remove<String>("description")
+                remove<String>("selectedDate")
+                remove<String>("selectedTime")
+                remove<Int>("priorityFlag")
             }
         }
     }
+
+    if (viewModel.taskList.isEmpty()) {
+        Text(
+            text = "No tasks available.",
+            color = Color.White,
+            modifier = Modifier.fillMaxWidth().padding(16.dp)
+        )
+    } else {
+        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+            items(viewModel.taskList) { taskItem ->
+                TaskRow(taskItem)
+            }
+        }
+    }
+}
+
+
+@Composable
+fun TaskRow(taskItem: TaskItem) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0xFF363636))
+            .padding(16.dp)
+    ) {
+        Column {
+            Text(
+                text = taskItem.task,
+                color = Color.White,
+                style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium)
+            )
+            Text(
+                text = "${taskItem.date} at ${taskItem.time}",
+                color = Color.White,
+                style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium)
+            )
+        }
+    }
+}
+
+@Composable
+fun ToDo(){
+
 }
 
