@@ -6,6 +6,11 @@ import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.google.android.gms.tasks.Task
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.launch
 
 data class TaskItem(
     val task: String,
@@ -25,12 +30,15 @@ class TaskViewModel : ViewModel() {
     fun getDateTime(): String {
         return "$selectedDate $selectedTime"
     }
-    private val _taskList = mutableStateListOf<TaskItem>()
-    val taskList: List<TaskItem> get() = _taskList
+    private val _taskList = MutableStateFlow<List<TaskItem>>(emptyList())
+    val taskList: StateFlow<List<TaskItem>> = _taskList
 
     fun addTask(task: String, description: String?, date: String, time: String, priorityFlag: Int?) {
-        Log.d("TaskViewModel", "Adding task: $task, Description: $description, Date: $date, Time: $time")
-        _taskList.add(TaskItem(task, description, date, time, priorityFlag))
-        Log.d("TaskViewModel", "Task List Size: ${_taskList.size}")
+        viewModelScope.launch {
+            Log.d("TaskViewModel", "Adding task: $task, Description: $description, Date: $date, Time: $time")
+            val newTaskItem = TaskItem(task, description, date, time, priorityFlag)
+            _taskList.value = _taskList.value.toMutableList().apply { add(newTaskItem) }
+            Log.d("TaskViewModel", "Task List Size after update: ${_taskList.value.size}")
+        }
     }
 }

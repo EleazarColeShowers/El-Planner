@@ -48,6 +48,7 @@ import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -73,6 +74,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.elplanner.data.TaskItem
 import com.example.elplanner.data.TaskViewModel
 import com.example.elplanner.ui.theme.ElPlannerTheme
+import kotlinx.coroutines.delay
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.LocalTime
@@ -423,9 +425,18 @@ fun DateTime(navController: NavController, taskViewModel: TaskViewModel = viewMo
                         .clickable {
                             selectedDate?.let { date ->
                                 // Save task, description, and date to the savedStateHandle
-                                navController.currentBackStackEntry?.savedStateHandle?.set("task", task)
-                                navController.currentBackStackEntry?.savedStateHandle?.set("description", description)
-                                navController.currentBackStackEntry?.savedStateHandle?.set("selectedDate", date.toString())
+                                navController.currentBackStackEntry?.savedStateHandle?.set(
+                                    "task",
+                                    task
+                                )
+                                navController.currentBackStackEntry?.savedStateHandle?.set(
+                                    "description",
+                                    description
+                                )
+                                navController.currentBackStackEntry?.savedStateHandle?.set(
+                                    "selectedDate",
+                                    date.toString()
+                                )
 
                                 // Navigate to TimeView
                                 navController.navigate("TimeView")
@@ -621,8 +632,14 @@ fun TimeView(navController: NavController, taskViewModel: TaskViewModel = viewMo
                             selectedTime?.let { time ->
                                 val timeString = "${time.first}:${time.second}"
 
-                                navController.currentBackStackEntry?.savedStateHandle?.set("task", task)
-                                navController.currentBackStackEntry?.savedStateHandle?.set("description", description)
+                                navController.currentBackStackEntry?.savedStateHandle?.set(
+                                    "task",
+                                    task
+                                )
+                                navController.currentBackStackEntry?.savedStateHandle?.set(
+                                    "description",
+                                    description
+                                )
                                 navController.currentBackStackEntry?.savedStateHandle?.set(
                                     "selectedTime",
                                     timeString
@@ -821,17 +838,38 @@ fun PriorityFlag(navController: NavController, viewModel: TaskViewModel) {
                             if (selectedColumn != -1) {
                                 viewModel.selectedPriority = selectedColumn + 1
 
-                                navController.currentBackStackEntry?.savedStateHandle?.set("task", task)
-                                navController.currentBackStackEntry?.savedStateHandle?.set("description", description)
-                                navController.currentBackStackEntry?.savedStateHandle?.set("selectedDate", selectedDate)
-                                navController.currentBackStackEntry?.savedStateHandle?.set("selectedTime", selectedTime)
-                                navController.currentBackStackEntry?.savedStateHandle?.set("priorityFlag", selectedColumn + 1)
+                                navController.currentBackStackEntry?.savedStateHandle?.set(
+                                    "task",
+                                    task
+                                )
+                                navController.currentBackStackEntry?.savedStateHandle?.set(
+                                    "description",
+                                    description
+                                )
+                                navController.currentBackStackEntry?.savedStateHandle?.set(
+                                    "selectedDate",
+                                    selectedDate
+                                )
+                                navController.currentBackStackEntry?.savedStateHandle?.set(
+                                    "selectedTime",
+                                    selectedTime
+                                )
+                                navController.currentBackStackEntry?.savedStateHandle?.set(
+                                    "priorityFlag",
+                                    selectedColumn + 1
+                                )
 
                                 navController.navigate("TaskPage")
 
                             }
-                            Log.d("AddTask", "Selected Date: $selectedDate, Selected Time: $selectedTime")
-                            Log.d("AddTask", "Task: $task, Description: $description, priorityflag: $priorityFlag")
+                            Log.d(
+                                "AddTask",
+                                "Selected Date: $selectedDate, Selected Time: $selectedTime"
+                            )
+                            Log.d(
+                                "AddTask",
+                                "Task: $task, Description: $description, priorityflag: $priorityFlag"
+                            )
                         },
                     horizontalAlignment = Alignment.CenterHorizontally,
                     verticalArrangement = Arrangement.Center
@@ -853,39 +891,62 @@ fun PriorityFlag(navController: NavController, viewModel: TaskViewModel) {
 
 @Composable
 fun TaskPage(navController: NavController, viewModel: TaskViewModel) {
+    val taskList by viewModel.taskList.collectAsState()
+    Log.d("TaskPage", "Task list size in Composable: ${taskList.size}")
     val task = navController.previousBackStackEntry?.savedStateHandle?.get<String>("task")
     val description = navController.previousBackStackEntry?.savedStateHandle?.get<String>("description")
     val selectedDate = navController.previousBackStackEntry?.savedStateHandle?.get<String>("selectedDate")
     val selectedTime = navController.previousBackStackEntry?.savedStateHandle?.get<String>("selectedTime")
     val priorityFlag = navController.previousBackStackEntry?.savedStateHandle?.get<Int>("priorityFlag")
-    Log.d("AddTask", "Task: $task, Description: $description, priorityflag: $priorityFlag")
+    Log.d("AddTask", "Task: $task, Description: $description, Priorityflag: $priorityFlag")
 
 //    task?.let {
 //        viewModel.addTask(it, description, selectedDate ?: "", selectedTime ?: "", priorityFlag)
 //    }
-    LaunchedEffect(task) {
-        if (!task.isNullOrEmpty()) {
-            viewModel.addTask(task, description, selectedDate ?: "", selectedTime ?: "", priorityFlag)
-            // Clear the saved state to avoid adding the same task again
-            navController.previousBackStackEntry?.savedStateHandle?.apply {
-                remove<String>("task")
-                remove<String>("description")
-                remove<String>("selectedDate")
-                remove<String>("selectedTime")
-                remove<Int>("priorityFlag")
-            }
-        }
-    }
 
-    if (viewModel.taskList.isEmpty()) {
+LaunchedEffect(task){
+    task?.let {
+        viewModel.addTask(it, description ?: "", selectedDate ?: "", selectedTime ?: "", priorityFlag)
+//        navController.previousBackStackEntry?.savedStateHandle?.apply {
+//            remove<String>("task")
+//            remove<String>("description")
+//            remove<String>("selectedDate")
+//            remove<String>("selectedTime")
+//            remove<Int>("priorityFlag")
+//        }
+    }
+}
+
+
+//    LaunchedEffect(task) {
+//        if (!task.isNullOrEmpty()) {
+//            viewModel.addTask(task, description, selectedDate ?: "", selectedTime ?: "", priorityFlag)
+//            // Clear the saved state to avoid adding the same task again
+////            delay(500)
+//
+//            navController.previousBackStackEntry?.savedStateHandle?.apply {
+//                remove<String>("task")
+//                remove<String>("description")
+//                remove<String>("selectedDate")
+//                remove<String>("selectedTime")
+//                remove<Int>("priorityFlag")
+//            }
+//        }
+//    }
+
+    if (taskList.isEmpty()) {
         Text(
             text = "No tasks available.",
             color = Color.White,
-            modifier = Modifier.fillMaxWidth().padding(16.dp)
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         )
     } else {
         LazyColumn(modifier = Modifier.fillMaxWidth()) {
-            items(viewModel.taskList) { taskItem ->
+            // Use the collected taskList and map it to TaskRow
+            items(taskList) { taskItem ->
+                Log.d("TaskPage", "Rendering TaskRow for: ${taskItem.task}")
                 TaskRow(taskItem)
             }
         }
