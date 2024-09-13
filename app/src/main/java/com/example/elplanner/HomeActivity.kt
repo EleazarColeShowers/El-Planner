@@ -1,5 +1,7 @@
 package com.example.elplanner
 
+import android.content.Context
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -74,6 +76,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.elplanner.data.TaskItem
 import com.example.elplanner.data.TaskViewModel
 import com.example.elplanner.ui.theme.ElPlannerTheme
+import com.google.firebase.auth.FirebaseAuth
 import kotlinx.coroutines.delay
 import java.time.DayOfWeek
 import java.time.LocalDate
@@ -82,8 +85,12 @@ import java.time.YearMonth
 import java.util.Calendar
 
 class HomeActivity : ComponentActivity() {
+    lateinit var auth: FirebaseAuth
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
+        auth = FirebaseAuth.getInstance()
+
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
@@ -98,7 +105,7 @@ class HomeActivity : ComponentActivity() {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Index()
+                            Index(auth)
                         }
                     }
                 }
@@ -109,7 +116,7 @@ class HomeActivity : ComponentActivity() {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Index() {
+fun Index(auth: FirebaseAuth) {
     val navController = rememberNavController()
     Column(
         modifier = Modifier.fillMaxSize()
@@ -117,7 +124,7 @@ fun Index() {
         Column(
             modifier = Modifier.weight(1f)
         ) {
-            HomePage()
+            HomePage(auth)
             NavHost(navController = navController, startDestination = "EmptyPage") {
                 composable("EmptyPage") { EmptyPage() }
                 composable("AddTask"){ AddTask(navController)}
@@ -132,15 +139,17 @@ fun Index() {
 }
 
 @Composable
-fun HomePage() {
+fun HomePage(auth: FirebaseAuth) {
     val menu = painterResource(id = R.drawable.menu)
+    val context = LocalContext.current
+
     Column(
         modifier = Modifier
-            .fillMaxWidth(0.9f)
+            .fillMaxWidth()
             .padding(top = 14.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -159,6 +168,21 @@ fun HomePage() {
                     fontWeight = FontWeight.Medium
                 ),
                 modifier = Modifier.align(Alignment.CenterVertically)
+            )
+            Text(
+                text ="LOG OUT",
+                style = TextStyle(
+                    color = Color(0xFF8875FF),
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium
+                ),
+                modifier = Modifier.align(Alignment.CenterVertically)
+                    .clickable {
+                        auth.signOut()
+                        val intent = Intent(context, MainActivity::class.java)
+                        intent.putExtra("navigate_to", "Carousel")
+                        context.startActivity(intent)
+                    }
             )
         }
     }
@@ -907,32 +931,17 @@ fun TaskPage(navController: NavController, viewModel: TaskViewModel) {
 LaunchedEffect(task){
     task?.let {
         viewModel.addTask(it, description ?: "", selectedDate ?: "", selectedTime ?: "", priorityFlag)
-//        navController.previousBackStackEntry?.savedStateHandle?.apply {
-//            remove<String>("task")
-//            remove<String>("description")
-//            remove<String>("selectedDate")
-//            remove<String>("selectedTime")
-//            remove<Int>("priorityFlag")
-//        }
+        delay(1000)
+        navController.previousBackStackEntry?.savedStateHandle?.apply {
+            remove<String>("task")
+            remove<String>("description")
+            remove<String>("selectedDate")
+            remove<String>("selectedTime")
+            remove<Int>("priorityFlag")
+        }
     }
 }
 
-
-//    LaunchedEffect(task) {
-//        if (!task.isNullOrEmpty()) {
-//            viewModel.addTask(task, description, selectedDate ?: "", selectedTime ?: "", priorityFlag)
-//            // Clear the saved state to avoid adding the same task again
-////            delay(500)
-//
-//            navController.previousBackStackEntry?.savedStateHandle?.apply {
-//                remove<String>("task")
-//                remove<String>("description")
-//                remove<String>("selectedDate")
-//                remove<String>("selectedTime")
-//                remove<Int>("priorityFlag")
-//            }
-//        }
-//    }
 
     if (taskList.isEmpty()) {
         Text(

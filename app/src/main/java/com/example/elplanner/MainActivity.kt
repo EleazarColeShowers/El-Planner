@@ -1,5 +1,6 @@
 package com.example.elplanner
 
+import android.app.Activity
 import android.content.Intent
 import android.os.Bundle
 import android.util.Log
@@ -81,10 +82,12 @@ class MainActivity : ComponentActivity() {
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
+                        val navigateTo = (LocalContext.current as Activity).intent.getStringExtra("navigate_to")
+
 
                         val navController = rememberNavController()
-                        NavHost(navController = navController, startDestination = "splash") {
-                            composable("splash") { SplashPage(navController)}
+                        NavHost(navController = navController, startDestination = if (navigateTo == "Carousel") "Carousel" else "splash") {
+                            composable("splash") { SplashPage(navController, auth)}
                             composable("Carousel") { Carousel(navController= navController) }
                             composable("Welcome"){ WelcomePage(navController)}
                             composable("CreateAccount"){ CreateAccountPage(auth)}
@@ -99,8 +102,7 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun SplashPage(navController: NavController){
-
+fun SplashPage(navController: NavController, auth: FirebaseAuth){
     val splashIcon= painterResource(id = R.drawable.splashicon)
     Column (
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -123,9 +125,21 @@ fun SplashPage(navController: NavController){
         )
 
     }
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
-        delay(2000)
+        delay(1500)
+        val currentUser = auth.currentUser
+        if (currentUser != null) {
+            // User is logged in, navigate to HomeActivity
+            val intent = Intent(context, HomeActivity::class.java)
+            context.startActivity(intent)
+        } else {
+            // User is not logged in, navigate to the carousel screen
+            navController.navigate("carousel") {
+                popUpTo("splash") { inclusive = true }
+            }
+        }
         navController.navigate("carousel") {
             popUpTo("splash") { inclusive = true }
         }
