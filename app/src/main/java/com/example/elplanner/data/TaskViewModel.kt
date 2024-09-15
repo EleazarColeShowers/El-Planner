@@ -2,14 +2,14 @@ package com.example.elplanner.data
 
 import android.util.Log
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.gms.tasks.Task
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 data class TaskItem(
@@ -21,6 +21,9 @@ data class TaskItem(
 )
 
 class TaskViewModel : ViewModel() {
+    init {
+        Log.d("TaskViewModel", "TaskViewModel Created!")
+    }
     var task by mutableStateOf("")
     var description by mutableStateOf("")
     var selectedDate by mutableStateOf("")

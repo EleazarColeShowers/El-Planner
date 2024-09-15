@@ -1,6 +1,5 @@
 package com.example.elplanner
 
-import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -49,7 +48,6 @@ import androidx.compose.material3.TimeInput
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -69,7 +67,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
-import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -77,19 +74,18 @@ import com.example.elplanner.data.TaskItem
 import com.example.elplanner.data.TaskViewModel
 import com.example.elplanner.ui.theme.ElPlannerTheme
 import com.google.firebase.auth.FirebaseAuth
-import kotlinx.coroutines.delay
 import java.time.DayOfWeek
 import java.time.LocalDate
-import java.time.LocalTime
 import java.time.YearMonth
 import java.util.Calendar
 
 class HomeActivity : ComponentActivity() {
-    lateinit var auth: FirebaseAuth
+    private lateinit var auth: FirebaseAuth
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         auth = FirebaseAuth.getInstance()
+
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -99,13 +95,14 @@ class HomeActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = Color.Black
                 ) {
+                    val taskViewModel: TaskViewModel = viewModel()
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Index(auth)
+                            Index(auth, taskViewModel)
                         }
                     }
                 }
@@ -116,8 +113,9 @@ class HomeActivity : ComponentActivity() {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Index(auth: FirebaseAuth) {
+fun Index(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
     val navController = rememberNavController()
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -127,11 +125,11 @@ fun Index(auth: FirebaseAuth) {
             HomePage(auth)
             NavHost(navController = navController, startDestination = "EmptyPage") {
                 composable("EmptyPage") { EmptyPage() }
-                composable("AddTask"){ AddTask(navController)}
-                composable("DateTime"){ DateTime(navController)}
-                composable("TimeView"){ TimeView(navController)}
-                composable("PriorityFlag"){ PriorityFlag(navController, viewModel = TaskViewModel())}
-                composable("TaskPage"){ TaskPage(navController, viewModel = TaskViewModel())}
+                composable("AddTask"){ AddTask(navController, taskViewModel)}
+                composable("DateTime"){ DateTime(navController, taskViewModel)}
+                composable("TimeView"){ TimeView(navController, taskViewModel)}
+                composable("PriorityFlag"){ PriorityFlag(navController, taskViewModel)}
+                composable("TaskPage"){ TaskPage(navController, taskViewModel)}
             }
         }
         BottomBar(navController)
@@ -296,7 +294,7 @@ fun BottomBar(navController: NavController) {
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddTask(navController: NavController, taskViewModel: TaskViewModel = viewModel()) {
+fun AddTask(navController: NavController, taskViewModel: TaskViewModel) {
     val context = LocalContext.current
     Box(
         modifier = Modifier
@@ -392,7 +390,7 @@ fun AddTask(navController: NavController, taskViewModel: TaskViewModel = viewMod
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun DateTime(navController: NavController, taskViewModel: TaskViewModel = viewModel()) {
+fun DateTime(navController: NavController, taskViewModel: TaskViewModel) {
     val task = navController.previousBackStackEntry?.savedStateHandle?.get<String>("task")
     val description = navController.previousBackStackEntry?.savedStateHandle?.get<String>("description")
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
@@ -581,7 +579,7 @@ fun CalendarView(onDateSelected: (LocalDate) -> Unit) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun TimeView(navController: NavController, taskViewModel: TaskViewModel = viewModel()) {
+fun TimeView(navController: NavController, taskViewModel: TaskViewModel) {
     val task = navController.previousBackStackEntry?.savedStateHandle?.get<String>("task")
     val description = navController.previousBackStackEntry?.savedStateHandle?.get<String>("description")
     val selectedDate = navController.previousBackStackEntry?.savedStateHandle?.get<String>("selectedDate")
@@ -695,7 +693,6 @@ fun TimeView(navController: NavController, taskViewModel: TaskViewModel = viewMo
     }
 }
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DigitalTime(onTimeSelected: (Int, Int) -> Unit) {
@@ -734,7 +731,7 @@ fun MyAppTheme(content: @Composable () -> Unit) {
 }
 
 @Composable
-fun PriorityFlag(navController: NavController, viewModel: TaskViewModel) {
+fun PriorityFlag(navController: NavController, taskViewModel: TaskViewModel) {
     val task = navController.previousBackStackEntry?.savedStateHandle?.get<String>("task")
     val description = navController.previousBackStackEntry?.savedStateHandle?.get<String>("description")
     val selectedDate = navController.previousBackStackEntry?.savedStateHandle?.get<String>("selectedDate")
@@ -860,7 +857,7 @@ fun PriorityFlag(navController: NavController, viewModel: TaskViewModel) {
                         .height(40.dp)
                         .clickable {
                             if (selectedColumn != -1) {
-                                viewModel.selectedPriority = selectedColumn + 1
+                                taskViewModel.selectedPriority = selectedColumn + 1
 
                                 navController.currentBackStackEntry?.savedStateHandle?.set(
                                     "task",
@@ -914,8 +911,8 @@ fun PriorityFlag(navController: NavController, viewModel: TaskViewModel) {
 }
 
 @Composable
-fun TaskPage(navController: NavController, viewModel: TaskViewModel) {
-    val taskList by viewModel.taskList.collectAsState()
+fun TaskPage(navController: NavController, taskViewModel: TaskViewModel) {
+    val taskList by taskViewModel.taskList.collectAsState()
     Log.d("TaskPage", "Task list size in Composable: ${taskList.size}")
     val task = navController.previousBackStackEntry?.savedStateHandle?.get<String>("task")
     val description = navController.previousBackStackEntry?.savedStateHandle?.get<String>("description")
@@ -924,25 +921,10 @@ fun TaskPage(navController: NavController, viewModel: TaskViewModel) {
     val priorityFlag = navController.previousBackStackEntry?.savedStateHandle?.get<Int>("priorityFlag")
     Log.d("AddTask", "Task: $task, Description: $description, Priorityflag: $priorityFlag")
 
-//    task?.let {
-//        viewModel.addTask(it, description, selectedDate ?: "", selectedTime ?: "", priorityFlag)
-//    }
-
-LaunchedEffect(task){
-    task?.let {
-        viewModel.addTask(it, description ?: "", selectedDate ?: "", selectedTime ?: "", priorityFlag)
-        delay(1000)
-        navController.previousBackStackEntry?.savedStateHandle?.apply {
-            remove<String>("task")
-            remove<String>("description")
-            remove<String>("selectedDate")
-            remove<String>("selectedTime")
-            remove<Int>("priorityFlag")
-        }
-    }
-}
-
-
+    task?.let { it ->
+        if (taskList.none { it.task == task }) {  // Avoid adding duplicate tasks
+            taskViewModel.addTask(it, description, selectedDate ?: "", selectedTime ?: "", priorityFlag)
+        }    }
     if (taskList.isEmpty()) {
         Text(
             text = "No tasks available.",
@@ -952,11 +934,14 @@ LaunchedEffect(task){
                 .padding(16.dp)
         )
     } else {
-        LazyColumn(modifier = Modifier.fillMaxWidth()) {
+        LazyColumn(modifier = Modifier.fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally) {
             // Use the collected taskList and map it to TaskRow
             items(taskList) { taskItem ->
                 Log.d("TaskPage", "Rendering TaskRow for: ${taskItem.task}")
                 TaskRow(taskItem)
+                Spacer(modifier = Modifier.height(16.dp))
+
             }
         }
     }
@@ -967,7 +952,7 @@ LaunchedEffect(task){
 fun TaskRow(taskItem: TaskItem) {
     Row(
         modifier = Modifier
-            .fillMaxWidth()
+            .fillMaxWidth(0.9f)
             .background(Color(0xFF363636))
             .padding(16.dp)
     ) {
@@ -986,8 +971,4 @@ fun TaskRow(taskItem: TaskItem) {
     }
 }
 
-@Composable
-fun ToDo(){
-
-}
 
