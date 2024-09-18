@@ -1,5 +1,6 @@
 package com.example.elplanner
 
+import android.app.Application
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -7,9 +8,11 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -28,15 +31,20 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.BottomNavigation
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.BottomNavigationItem
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.Icon
+import androidx.compose.material.SnackbarDefaults.backgroundColor
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -48,6 +56,8 @@ import androidx.compose.material3.TimeInput
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -62,16 +72,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.elplanner.data.TaskDatabase
 import com.example.elplanner.data.TaskItem
+import com.example.elplanner.data.TaskRepository
 import com.example.elplanner.data.TaskViewModel
+import com.example.elplanner.data.TaskViewModelFactory
 import com.example.elplanner.ui.theme.ElPlannerTheme
 import com.google.firebase.auth.FirebaseAuth
 import java.time.DayOfWeek
@@ -89,13 +103,18 @@ class HomeActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        val taskDao = TaskDatabase.getDatabase(application).taskDao()
+        val repository = TaskRepository(taskDao)
         setContent {
             ElPlannerTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = Color.Black
                 ) {
-                    val taskViewModel: TaskViewModel = viewModel()
+                    val taskViewModel: TaskViewModel by viewModels {
+                        TaskViewModelFactory(application, repository)
+                    }
+
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
@@ -115,6 +134,9 @@ class HomeActivity : ComponentActivity() {
 @Composable
 fun Index(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
     val navController = rememberNavController()
+    val application = HomeActivity().application // Or `this.application` in an Activity
+    val taskList by taskViewModel.taskList.collectAsState()
+    val searchQuery = remember { mutableStateOf("") }
 
     Column(
         modifier = Modifier.fillMaxSize()
@@ -123,14 +145,25 @@ fun Index(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
             modifier = Modifier.weight(1f)
         ) {
             HomePage(auth)
-            NavHost(navController = navController, startDestination = "EmptyPage") {
+            SearchBar(
+                hint = "Search books...",
+                onTextChange = { query ->
+                    searchQuery.value = query
+                },
+                onSearchClicked = {
+                    println("Search for: ${searchQuery.value}")
+                }
+            )
+            Spacer(modifier = Modifier.height(20.dp))
+            NavHost(navController = navController, startDestination = if (taskList.isEmpty()) "EmptyPage" else "TaskPage") {
                 composable("EmptyPage") { EmptyPage() }
                 composable("AddTask"){ AddTask(navController, taskViewModel)}
                 composable("DateTime"){ DateTime(navController, taskViewModel)}
                 composable("TimeView"){ TimeView(navController, taskViewModel)}
                 composable("PriorityFlag"){ PriorityFlag(navController, taskViewModel)}
-                composable("TaskPage"){ TaskPage(navController, taskViewModel)}
+                composable("TaskPage"){ TaskPage(navController, taskViewModel, searchQuery.value)}
             }
+
         }
         BottomBar(navController)
     }
@@ -140,14 +173,15 @@ fun Index(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
 fun HomePage(auth: FirebaseAuth) {
     val menu = painterResource(id = R.drawable.menu)
     val context = LocalContext.current
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
             .padding(top = 14.dp)
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 5.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 5.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -174,13 +208,78 @@ fun HomePage(auth: FirebaseAuth) {
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Medium
                 ),
-                modifier = Modifier.align(Alignment.CenterVertically)
+                modifier = Modifier
+                    .align(Alignment.CenterVertically)
                     .clickable {
                         auth.signOut()
                         val intent = Intent(context, MainActivity::class.java)
                         intent.putExtra("navigate_to", "Carousel")
                         context.startActivity(intent)
                     }
+            )
+        }
+    }
+}
+
+@Composable
+fun SearchBar(
+    modifier: Modifier = Modifier,
+    hint: String = "Search...",
+    onTextChange: (String) -> Unit,
+    onSearchClicked: () -> Unit,
+    textState: MutableState<String> = remember { mutableStateOf("") }
+) {
+    val text = textState.value
+
+    Row(
+        modifier = modifier
+            .padding(16.dp)
+            .fillMaxWidth()
+            .background(color = Color.Black, shape = RoundedCornerShape(6.dp))
+            .border(width = 1.dp, color = Color.Gray, shape = RoundedCornerShape(6.dp)),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Center
+    ) {
+        BasicTextField(
+            value = text,
+            onValueChange = {
+                textState.value = it
+                onTextChange(it)
+            },
+            modifier = Modifier
+                .weight(1f)
+                .padding(end = 8.dp, start = 8.dp),
+            singleLine = true,
+            textStyle = TextStyle(
+                color = Color.Gray,
+                fontSize = 16.sp
+            ),
+            decorationBox = { innerTextField ->
+                if (text.isEmpty()) {
+                    Text(
+                        text = hint,
+                        color = Color.Gray,
+                        fontSize = 16.sp
+                    )
+                }
+                innerTextField()
+            },
+            keyboardOptions = KeyboardOptions(
+                keyboardType = KeyboardType.Text,
+                imeAction = ImeAction.Search
+            ),
+            keyboardActions = KeyboardActions(
+                onSearch = {
+                    onSearchClicked()
+                }
+            )
+        )
+
+        IconButton(onClick = { onSearchClicked() }) {
+            Icon(
+                imageVector = Icons.Default.Search,
+                contentDescription = "Search",
+                tint = Color.Gray
             )
         }
     }
@@ -911,7 +1010,7 @@ fun PriorityFlag(navController: NavController, taskViewModel: TaskViewModel) {
 }
 
 @Composable
-fun TaskPage(navController: NavController, taskViewModel: TaskViewModel) {
+fun TaskPage(navController: NavController, taskViewModel: TaskViewModel, searchQuery: String) {
     val taskList by taskViewModel.taskList.collectAsState()
     Log.d("TaskPage", "Task list size in Composable: ${taskList.size}")
     val task = navController.previousBackStackEntry?.savedStateHandle?.get<String>("task")
@@ -920,11 +1019,23 @@ fun TaskPage(navController: NavController, taskViewModel: TaskViewModel) {
     val selectedTime = navController.previousBackStackEntry?.savedStateHandle?.get<String>("selectedTime")
     val priorityFlag = navController.previousBackStackEntry?.savedStateHandle?.get<Int>("priorityFlag")
     Log.d("AddTask", "Task: $task, Description: $description, Priorityflag: $priorityFlag")
-
-    task?.let { it ->
-        if (taskList.none { it.task == task }) {  // Avoid adding duplicate tasks
-            taskViewModel.addTask(it, description, selectedDate ?: "", selectedTime ?: "", priorityFlag)
-        }    }
+    LaunchedEffect(task) {
+        task?.let { it ->
+            if (taskList.none { it.task == task }) {  // Avoid adding duplicate tasks
+                if (description != null) {
+                    taskViewModel.addTask(it, description, selectedDate ?: "", selectedTime ?: "", priorityFlag)
+                }
+            }
+        }
+    }
+    var filteredTasks= if(searchQuery.isNotBlank()){
+        taskList.filter {
+            it.task.contains(searchQuery, ignoreCase = true)||
+                    it.date.contains(searchQuery, ignoreCase = true)
+        }
+    }else{
+        taskList
+    }
     if (taskList.isEmpty()) {
         Text(
             text = "No tasks available.",
@@ -937,23 +1048,23 @@ fun TaskPage(navController: NavController, taskViewModel: TaskViewModel) {
         LazyColumn(modifier = Modifier.fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally) {
             // Use the collected taskList and map it to TaskRow
-            items(taskList) { taskItem ->
+            items(filteredTasks) { taskItem ->
                 Log.d("TaskPage", "Rendering TaskRow for: ${taskItem.task}")
                 TaskRow(taskItem)
                 Spacer(modifier = Modifier.height(16.dp))
-
             }
         }
     }
 }
 
-
 @Composable
 fun TaskRow(taskItem: TaskItem) {
+    val priorityFlag = painterResource(id = R.drawable.priorityflag)
+
     Row(
         modifier = Modifier
             .fillMaxWidth(0.9f)
-            .background(Color(0xFF363636))
+            .background(Color(0xFF363636), shape = RoundedCornerShape(6.dp))
             .padding(16.dp)
     ) {
         Column {
@@ -962,13 +1073,40 @@ fun TaskRow(taskItem: TaskItem) {
                 color = Color.White,
                 style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium)
             )
-            Text(
-                text = "${taskItem.date} at ${taskItem.time}",
-                color = Color.White,
-                style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium)
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween, // Space between items
+            ){
+                Text(
+                    text = "${taskItem.date} at ${taskItem.time}",
+                    color = Color.White,
+                    style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                )
+
+                Row(
+                    modifier = Modifier
+                        .width(42.dp)
+                        .height(29.dp)
+                        .background(Color(0xFF363636))
+                        .border(width = 1.dp, color = Color(0xFF8875FF), shape = RoundedCornerShape(4.dp))
+                        .clip(RoundedCornerShape(8.dp)),
+                ) {
+                    Spacer(modifier = Modifier.height(7.dp))
+                    Image(
+                        painter = priorityFlag,
+                        contentDescription = null,
+                        modifier = Modifier.size(14.dp)
+                    )
+                    Spacer(modifier = Modifier.height(5.dp))
+                    Text(
+                        text = "${taskItem.priorityFlag}",
+                        color = Color.White,
+                        style = TextStyle(fontSize = 12.sp),
+
+                    )
+                }
+
+            }
         }
     }
 }
-
-

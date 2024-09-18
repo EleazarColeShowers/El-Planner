@@ -1,29 +1,31 @@
 package com.example.elplanner.data
 
+import android.app.Application
 import android.util.Log
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
-data class TaskItem(
-    val task: String,
-    val description: String?,
-    val date: String,
-    val time: String,
-    val priorityFlag: Int?
-)
 
-class TaskViewModel : ViewModel() {
+class TaskViewModel(application: Application) : AndroidViewModel(application) {
+
+    private val taskDao: TaskDao = TaskDatabase.getDatabase(application).taskDao()
+    private val repository: TaskRepository = TaskRepository(taskDao)
+
     init {
         Log.d("TaskViewModel", "TaskViewModel Created!")
     }
+
     var task by mutableStateOf("")
     var description by mutableStateOf("")
     var selectedDate by mutableStateOf("")
@@ -33,15 +35,34 @@ class TaskViewModel : ViewModel() {
     fun getDateTime(): String {
         return "$selectedDate $selectedTime"
     }
-    private val _taskList = MutableStateFlow<List<TaskItem>>(emptyList())
-    val taskList: StateFlow<List<TaskItem>> = _taskList
 
-    fun addTask(task: String, description: String?, date: String, time: String, priorityFlag: Int?) {
-        viewModelScope.launch {
+
+    val taskList = taskDao.getAllTasks().stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
+
+    fun addTask(task: String, description: String, date: String, time: String, priorityFlag: Int?) {
+        viewModelScope.launch{
             Log.d("TaskViewModel", "Adding task: $task, Description: $description, Date: $date, Time: $time")
-            val newTaskItem = TaskItem(task, description, date, time, priorityFlag)
-            _taskList.value = _taskList.value.toMutableList().apply { add(newTaskItem) }
-            Log.d("TaskViewModel", "Task List Size after update: ${_taskList.value.size}")
+            val taskEntity = TaskItem(
+                task = task,
+                description = description,
+                date = date,
+                time = time,
+                priorityFlag = priorityFlag ?: 0
+            )
+            taskDao.insertTask(taskEntity)
         }
+    }
+}
+
+class TaskViewModelFactory(
+    private val application: Application,
+    private val repository: TaskRepository
+) : ViewModelProvider.Factory {
+    @Suppress("UNCHECKED_CAST")
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+        if (modelClass.isAssignableFrom(TaskViewModel::class.java)) {
+            return TaskViewModel(application) as T // Pass application here
+        }
+        throw IllegalArgumentException("Unknown ViewModel class")
     }
 }
