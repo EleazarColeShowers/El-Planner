@@ -34,23 +34,34 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material.AlertDialog
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.BottomNavigation
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.DismissDirection
+import androidx.compose.material.DismissValue
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.FractionalThreshold
 //noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.Icon
 import androidx.compose.material.SnackbarDefaults.backgroundColor
+import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.ArrowForward
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.rememberDismissState
+import androidx.compose.material.rememberSwipeableState
+import androidx.compose.material.swipeable
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TimeInput
 import androidx.compose.material3.darkColorScheme
@@ -1023,7 +1034,7 @@ fun TaskPage(navController: NavController, taskViewModel: TaskViewModel, searchQ
         task?.let { it ->
             if (taskList.none { it.task == task }) {  // Avoid adding duplicate tasks
                 if (description != null) {
-                    taskViewModel.addTask(it, description, selectedDate ?: "", selectedTime ?: "", priorityFlag)
+                    taskViewModel.addTask(it, description, selectedDate ?: "", selectedTime ?: "", priorityFlag, category = "")
                 }
             }
         }
@@ -1044,69 +1055,192 @@ fun TaskPage(navController: NavController, taskViewModel: TaskViewModel, searchQ
                 .fillMaxWidth()
                 .padding(16.dp)
         )
-    } else {
-        LazyColumn(modifier = Modifier.fillMaxWidth(),
-            horizontalAlignment = Alignment.CenterHorizontally) {
-            // Use the collected taskList and map it to TaskRow
-            items(filteredTasks) { taskItem ->
-                Log.d("TaskPage", "Rendering TaskRow for: ${taskItem.task}")
-                TaskRow(taskItem)
+    }else {
+        LazyColumn(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+            items(filteredTasks, key = { it.id }) { taskItem ->
+                TaskRow(taskItem = taskItem, taskViewModel = taskViewModel)
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
     }
 }
 
+@OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun TaskRow(taskItem: TaskItem) {
-    val priorityFlag = painterResource(id = R.drawable.priorityflag)
-
-    Row(
-        modifier = Modifier
-            .fillMaxWidth(0.9f)
-            .background(Color(0xFF363636), shape = RoundedCornerShape(6.dp))
-            .padding(16.dp)
-    ) {
-        Column {
-            Text(
-                text = taskItem.task,
-                color = Color.White,
-                style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium)
-            )
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween, // Space between items
-            ){
-                Text(
-                    text = "${taskItem.date} at ${taskItem.time}",
-                    color = Color.White,
-                    style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                )
-
-                Row(
-                    modifier = Modifier
-                        .width(42.dp)
-                        .height(29.dp)
-                        .background(Color(0xFF363636))
-                        .border(width = 1.dp, color = Color(0xFF8875FF), shape = RoundedCornerShape(4.dp))
-                        .clip(RoundedCornerShape(8.dp)),
-                ) {
-                    Spacer(modifier = Modifier.height(7.dp))
-                    Image(
-                        painter = priorityFlag,
-                        contentDescription = null,
-                        modifier = Modifier.size(14.dp)
-                    )
-                    Spacer(modifier = Modifier.height(5.dp))
-                    Text(
-                        text = "${taskItem.priorityFlag}",
-                        color = Color.White,
-                        style = TextStyle(fontSize = 12.sp),
-
-                    )
-                }
-
+fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel) {
+    var showDialog by remember { mutableStateOf(false) }
+    val dismissState = rememberDismissState { dismissValue ->
+        when (dismissValue) {
+            DismissValue.DismissedToStart -> {
+                taskViewModel.deleteTask(taskItem)
+                true
             }
+            DismissValue.DismissedToEnd -> {
+                showDialog = true
+                false
+            }
+            else -> false
         }
     }
+
+    if (showDialog) {
+        CategorySelectionDialog(
+            onDismiss = { showDialog = false },
+            onCategorySelected = { category ->
+                taskViewModel.deleteTask(taskItem.copy(category = category))
+            }
+        )
+    }
+
+    SwipeToDismiss(
+        state = dismissState,
+        directions = setOf(DismissDirection.EndToStart),
+        background = {
+            val color = when (dismissState.dismissDirection) {
+                DismissDirection.EndToStart -> Color.Red   // Color for delete
+                DismissDirection.StartToEnd -> Color.Blue  // Color for edit
+                else -> Color.Transparent
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(color)
+                    .padding(horizontal = 16.dp),
+                contentAlignment = when (dismissState.dismissDirection) {
+                    DismissDirection.EndToStart -> Alignment.CenterEnd // Align delete icon to the end (right)
+                    DismissDirection.StartToEnd -> Alignment.CenterStart // Align edit icon to the start (left)
+                    else -> Alignment.CenterStart
+                }
+            ) {
+                // Show different icons based on swipe direction
+                when (dismissState.dismissDirection) {
+                    DismissDirection.EndToStart -> Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete",
+                        tint = Color.White,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                    DismissDirection.StartToEnd -> Icon(
+                        painter = painterResource(id = R.drawable.edit), // Your edit icon resource
+                        contentDescription = "Edit",
+                        tint = Color.White,
+                        modifier = Modifier.padding(16.dp)
+                    )
+                    else -> Unit
+                }
+            }
+        },
+        dismissContent = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .background(Color(0xFF363636), shape = RoundedCornerShape(6.dp))
+                    .padding(16.dp),
+            ) {
+                Column {
+                    Text(
+                        text = taskItem.task,
+                        color = Color.White,
+                        style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium)
+                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text(
+                            text = "${taskItem.date} at ${taskItem.time}",
+                            color = Color.White,
+                            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium)
+                        )
+                        Row(
+                            modifier = Modifier
+                                .width(42.dp)
+                                .height(29.dp)
+                                .background(Color(0xFF363636))
+                                .border(width = 1.dp, color = Color(0xFF8875FF), shape = RoundedCornerShape(4.dp))
+                                .clip(RoundedCornerShape(8.dp)),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Image(
+                                painter = painterResource(id = R.drawable.priorityflag),
+                                contentDescription = null,
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp)) // Add some space between image and text
+                            Text(
+                                text = "${taskItem.priorityFlag}",
+                                color = Color.White,
+                                style = TextStyle(fontSize = 12.sp),
+                            )
+                        }
+                    }
+                }
+            }
+
+        }
+    )
+}
+
+
+//@OptIn(ExperimentalMaterialApi::class)
+//@Composable
+//fun CustomSwipeableTaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel) {
+//    val swipeState = rememberSwipeableState(0)
+//    val swipeableAnchors = mapOf(0f to 0, 1000f to 1) // Change 1000f to adjust swipe distance
+//
+//    Box(
+//        modifier = Modifier
+//            .fillMaxWidth()
+//            .background(Color.Gray) // Add your background color
+//            .swipeable(
+//                state = swipeState,
+//                anchors = swipeableAnchors,
+//                thresholds = { _, _ -> FractionalThreshold(0.5f) },
+//                orientation = Orientation.Horizontal // Specify the orientation
+//            )
+//    ) {
+//        // Your content and icons here
+//        if (swipeState.offset.value > 0) {
+//            // Display edit icon
+//            Icon(
+//                painter = painterResource(id = R.drawable.edit),
+//                contentDescription = "Edit",
+//                tint = Color.White,
+//                modifier = Modifier.align(Alignment.CenterStart)
+//            )
+//        } else {
+//            // Display delete icon
+//            Icon(
+//                imageVector = Icons.Default.Delete,
+//                contentDescription = "Delete",
+//                tint = Color.White,
+//                modifier = Modifier.align(Alignment.CenterEnd)
+//            )
+//        }
+//
+//        // Display task content
+//        TaskRow(taskItem, taskViewModel)
+//    }
+//}
+@Composable
+fun CategorySelectionDialog(onDismiss: () -> Unit, onCategorySelected: (String) -> Unit) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = { Text("Select Category") },
+        buttons = {
+            Column {
+                TextButton(onClick = { onCategorySelected("Work") }) {
+                    Text("Work")
+                }
+                TextButton(onClick = { onCategorySelected("Personal") }) {
+                    Text("Personal")
+                }
+                TextButton(onClick = { onDismiss() }) {
+                    Text("Cancel")
+                }
+            }
+        }
+    )
 }

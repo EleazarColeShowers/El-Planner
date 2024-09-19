@@ -32,14 +32,9 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
     var selectedTime by mutableStateOf("")
     var selectedPriority by mutableStateOf(-1)
 
-    fun getDateTime(): String {
-        return "$selectedDate $selectedTime"
-    }
-
-
     val taskList = taskDao.getAllTasks().stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
 
-    fun addTask(task: String, description: String, date: String, time: String, priorityFlag: Int?) {
+    fun addTask(task: String, description: String, date: String, time: String, priorityFlag: Int?, category: String?) {
         viewModelScope.launch{
             Log.d("TaskViewModel", "Adding task: $task, Description: $description, Date: $date, Time: $time")
             val taskEntity = TaskItem(
@@ -47,9 +42,16 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
                 description = description,
                 date = date,
                 time = time,
-                priorityFlag = priorityFlag ?: 0
+                priorityFlag = priorityFlag ?: 0,
+                category = category
             )
             taskDao.insertTask(taskEntity)
+        }
+    }
+
+    fun deleteTask(taskItem: TaskItem) {
+        viewModelScope.launch {
+            taskDao.deleteTask(taskItem)
         }
     }
 }

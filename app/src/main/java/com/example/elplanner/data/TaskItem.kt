@@ -10,5 +10,7 @@ data class TaskItem(
     val description: String?,
     val date: String,
     val time: String,
-    val priorityFlag: Int?
+    val priorityFlag: Int?,
+    var category: String? = null // Add a nullable category field
+
 )
