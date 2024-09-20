@@ -1,6 +1,8 @@
 package com.example.elplanner
 
-import android.app.Application
+//noinspection UsingMaterialAndMaterial3Libraries
+//noinspection UsingMaterialAndMaterial3Libraries
+//noinspection UsingMaterialAndMaterial3Libraries
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -35,17 +37,12 @@ import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.AlertDialog
-//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.BottomNavigation
-//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.BottomNavigationItem
 import androidx.compose.material.DismissDirection
 import androidx.compose.material.DismissValue
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.FractionalThreshold
-//noinspection UsingMaterialAndMaterial3Libraries
 import androidx.compose.material.Icon
-import androidx.compose.material.SnackbarDefaults.backgroundColor
 import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
@@ -53,15 +50,12 @@ import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.rememberDismissState
-import androidx.compose.material.rememberSwipeableState
-import androidx.compose.material.swipeable
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TimeInput
 import androidx.compose.material3.darkColorScheme
@@ -233,12 +227,7 @@ fun HomePage(auth: FirebaseAuth) {
 }
 
 @Composable
-fun SearchBar(
-    modifier: Modifier = Modifier,
-    hint: String = "Search...",
-    onTextChange: (String) -> Unit,
-    onSearchClicked: () -> Unit,
-    textState: MutableState<String> = remember { mutableStateOf("") }
+fun SearchBar(modifier: Modifier = Modifier, hint: String = "Search...", onTextChange: (String) -> Unit, onSearchClicked: () -> Unit, textState: MutableState<String> = remember { mutableStateOf("") }
 ) {
     val text = textState.value
 
@@ -1032,7 +1021,7 @@ fun TaskPage(navController: NavController, taskViewModel: TaskViewModel, searchQ
     Log.d("AddTask", "Task: $task, Description: $description, Priorityflag: $priorityFlag")
     LaunchedEffect(task) {
         task?.let { it ->
-            if (taskList.none { it.task == task }) {  // Avoid adding duplicate tasks
+            if (taskList.none { it.task == task }) {
                 if (description != null) {
                     taskViewModel.addTask(it, description, selectedDate ?: "", selectedTime ?: "", priorityFlag, category = "")
                 }
@@ -1058,7 +1047,7 @@ fun TaskPage(navController: NavController, taskViewModel: TaskViewModel, searchQ
     }else {
         LazyColumn(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
             items(filteredTasks, key = { it.id }) { taskItem ->
-                TaskRow(taskItem = taskItem, taskViewModel = taskViewModel)
+                TaskRow(taskItem = taskItem, taskViewModel = taskViewModel, navController)
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
@@ -1067,7 +1056,7 @@ fun TaskPage(navController: NavController, taskViewModel: TaskViewModel, searchQ
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel) {
+fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel, navController: NavController) {
     var showDialog by remember { mutableStateOf(false) }
     val dismissState = rememberDismissState { dismissValue ->
         when (dismissValue) {
@@ -1087,18 +1076,19 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel) {
         CategorySelectionDialog(
             onDismiss = { showDialog = false },
             onCategorySelected = { category ->
-                taskViewModel.deleteTask(taskItem.copy(category = category))
-            }
+                taskViewModel.updateTask(taskItem.copy(category = category))
+            },
+            navController = navController
         )
     }
 
     SwipeToDismiss(
         state = dismissState,
-        directions = setOf(DismissDirection.EndToStart),
+        directions = setOf(DismissDirection.StartToEnd,DismissDirection.EndToStart),
         background = {
             val color = when (dismissState.dismissDirection) {
-                DismissDirection.EndToStart -> Color.Red   // Color for delete
-                DismissDirection.StartToEnd -> Color.Blue  // Color for edit
+                DismissDirection.StartToEnd -> Color.LightGray
+                DismissDirection.EndToStart -> Color.LightGray
                 else -> Color.Transparent
             }
             Box(
@@ -1107,22 +1097,21 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel) {
                     .background(color)
                     .padding(horizontal = 16.dp),
                 contentAlignment = when (dismissState.dismissDirection) {
-                    DismissDirection.EndToStart -> Alignment.CenterEnd // Align delete icon to the end (right)
-                    DismissDirection.StartToEnd -> Alignment.CenterStart // Align edit icon to the start (left)
+                    DismissDirection.StartToEnd -> Alignment.CenterStart
+                    DismissDirection.EndToStart -> Alignment.CenterEnd
                     else -> Alignment.CenterStart
                 }
             ) {
-                // Show different icons based on swipe direction
                 when (dismissState.dismissDirection) {
-                    DismissDirection.EndToStart -> Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete",
+                    DismissDirection.StartToEnd -> Icon(
+                        painter = painterResource(id = R.drawable.edit),
+                        contentDescription = "Edit",
                         tint = Color.White,
                         modifier = Modifier.padding(16.dp)
                     )
-                    DismissDirection.StartToEnd -> Icon(
-                        painter = painterResource(id = R.drawable.edit), // Your edit icon resource
-                        contentDescription = "Edit",
+                    DismissDirection.EndToStart -> Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Delete",
                         tint = Color.White,
                         modifier = Modifier.padding(16.dp)
                     )
@@ -1158,7 +1147,11 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel) {
                                 .width(42.dp)
                                 .height(29.dp)
                                 .background(Color(0xFF363636))
-                                .border(width = 1.dp, color = Color(0xFF8875FF), shape = RoundedCornerShape(4.dp))
+                                .border(
+                                    width = 1.dp,
+                                    color = Color(0xFF8875FF),
+                                    shape = RoundedCornerShape(4.dp)
+                                )
                                 .clip(RoundedCornerShape(8.dp)),
                             horizontalArrangement = Arrangement.Center,
                             verticalAlignment = Alignment.CenterVertically
@@ -1168,7 +1161,7 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel) {
                                 contentDescription = null,
                                 modifier = Modifier.size(14.dp)
                             )
-                            Spacer(modifier = Modifier.width(4.dp)) // Add some space between image and text
+                            Spacer(modifier = Modifier.width(4.dp))
                             Text(
                                 text = "${taskItem.priorityFlag}",
                                 color = Color.White,
@@ -1183,64 +1176,483 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel) {
     )
 }
 
-
-//@OptIn(ExperimentalMaterialApi::class)
-//@Composable
-//fun CustomSwipeableTaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel) {
-//    val swipeState = rememberSwipeableState(0)
-//    val swipeableAnchors = mapOf(0f to 0, 1000f to 1) // Change 1000f to adjust swipe distance
-//
-//    Box(
-//        modifier = Modifier
-//            .fillMaxWidth()
-//            .background(Color.Gray) // Add your background color
-//            .swipeable(
-//                state = swipeState,
-//                anchors = swipeableAnchors,
-//                thresholds = { _, _ -> FractionalThreshold(0.5f) },
-//                orientation = Orientation.Horizontal // Specify the orientation
-//            )
-//    ) {
-//        // Your content and icons here
-//        if (swipeState.offset.value > 0) {
-//            // Display edit icon
-//            Icon(
-//                painter = painterResource(id = R.drawable.edit),
-//                contentDescription = "Edit",
-//                tint = Color.White,
-//                modifier = Modifier.align(Alignment.CenterStart)
-//            )
-//        } else {
-//            // Display delete icon
-//            Icon(
-//                imageVector = Icons.Default.Delete,
-//                contentDescription = "Delete",
-//                tint = Color.White,
-//                modifier = Modifier.align(Alignment.CenterEnd)
-//            )
-//        }
-//
-//        // Display task content
-//        TaskRow(taskItem, taskViewModel)
-//    }
-//}
 @Composable
-fun CategorySelectionDialog(onDismiss: () -> Unit, onCategorySelected: (String) -> Unit) {
+fun CategorySelectionDialog(onDismiss: () -> Unit, onCategorySelected: (String) -> Unit, navController: NavController) {
+    val groceryIcon= painterResource(id = R.drawable.grocery)
+    val workIcon= painterResource(id = R.drawable.work)
+    val sportIcon= painterResource(id = R.drawable.sport)
+    val designIcon= painterResource(id = R.drawable.design)
+    val universityIcon= painterResource(id = R.drawable.university)
+    val socialIcon= painterResource(id = R.drawable.social)
+    val musicIcon= painterResource(id = R.drawable.music)
+    val healthIcon= painterResource(id = R.drawable.health)
+    val movieIcon= painterResource(id = R.drawable.movie)
+    val homeIcon= painterResource(id = R.drawable.homeicon)
     AlertDialog(
         onDismissRequest = { onDismiss() },
-        title = { Text("Select Category") },
         buttons = {
-            Column {
-                TextButton(onClick = { onCategorySelected("Work") }) {
-                    Text("Work")
-                }
-                TextButton(onClick = { onCategorySelected("Personal") }) {
-                    Text("Personal")
-                }
-                TextButton(onClick = { onDismiss() }) {
-                    Text("Cancel")
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .height(556.dp)
+                    .background(
+                        Color(0xFF363636),
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .padding(16.dp)
+            ) {
+                Column {
+                    Text(
+                        text = "Select Category",
+                        textAlign = TextAlign.Center,
+                        color = Color.White,
+                        modifier = Modifier.padding(bottom = 16.dp)
+                    )
+                    Row(
+                        modifier= Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .width(64.dp)
+                                .height(90.dp)
+                                .clickable {
+                                    onCategorySelected("Grocery")
+                                    navController.navigate("TaskPage")
+                                }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(64.dp)
+                                    .background(
+                                        Color(0xFFCCFF80),
+                                        shape = RoundedCornerShape(16.dp)
+                                    ),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Image(
+                                    painter = groceryIcon,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .width(25.98.dp)
+                                        .height(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(5.dp))
+                            Text(
+                                text = "Grocery",
+                                color = Color.White,
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+
+                        Column(
+                            modifier = Modifier
+                                .width(64.dp)
+                                .height(90.dp)
+                                .clickable {
+                                    onCategorySelected("Work")
+                                    navController.navigate("TaskPage")
+                                }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(64.dp)
+                                    .background(
+                                        Color(0xFFFF9680),
+                                        shape = RoundedCornerShape(16.dp)
+                                    ),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Image(
+                                    painter = workIcon,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .width(25.98.dp)
+                                        .height(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(5.dp))
+                            Text(
+                                text = "Work",
+                                color = Color.White,
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                        Column(
+                            modifier = Modifier
+                                .width(64.dp)
+                                .height(90.dp)
+                                .clickable {
+                                    onCategorySelected("Sport")
+                                    navController.navigate("TaskPage")
+                                }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(64.dp)
+                                    .background(
+                                        Color(0xFF80FFFF),
+                                        shape = RoundedCornerShape(16.dp)
+                                    ),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Image(
+                                    painter = sportIcon,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .width(25.98.dp)
+                                        .height(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(5.dp))
+                            Text(
+                                text = "Sport",
+                                color = Color.White,
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier= Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .width(64.dp)
+                                .height(90.dp)
+                                .clickable {
+                                    onCategorySelected("Design")
+                                    navController.navigate("TaskPage")
+                                }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(64.dp)
+                                    .background(
+                                        Color(0xFF80FFD9),
+                                        shape = RoundedCornerShape(16.dp)
+                                    ),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Image(
+                                    painter = designIcon,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .width(25.98.dp)
+                                        .height(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(5.dp))
+                            Text(
+                                text = "Design",
+                                color = Color.White,
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+
+                        Column(
+                            modifier = Modifier
+                                .width(64.dp)
+                                .height(90.dp)
+                                .clickable {
+                                    onCategorySelected("University")
+                                    navController.navigate("TaskPage")
+                                }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(64.dp)
+                                    .background(
+                                        Color(0xFF809CFF),
+                                        shape = RoundedCornerShape(16.dp)
+                                    ),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Image(
+                                    painter = universityIcon,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .width(25.98.dp)
+                                        .height(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(5.dp))
+                            Text(
+                                text = "University",
+                                color = Color.White,
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                        Column(
+                            modifier = Modifier
+                                .width(64.dp)
+                                .height(90.dp)
+                                .clickable {
+                                    onCategorySelected("Social")
+                                    navController.navigate("TaskPage")
+                                }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(64.dp)
+                                    .background(
+                                        Color(0xFFFF80EB),
+                                        shape = RoundedCornerShape(16.dp)
+                                    ),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Image(
+                                    painter = socialIcon,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .width(25.98.dp)
+                                        .height(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(5.dp))
+                            Text(
+                                text = "Social",
+                                color = Color.White,
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                        
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier= Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .width(64.dp)
+                                .height(90.dp)
+                                .clickable {
+                                    onCategorySelected("Music")
+                                    navController.navigate("TaskPage")
+                                }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(64.dp)
+                                    .background(
+                                        Color(0xFFFC80FF),
+                                        shape = RoundedCornerShape(16.dp)
+                                    ),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Image(
+                                    painter = musicIcon,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .width(25.98.dp)
+                                        .height(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(5.dp))
+                            Text(
+                                text = "Music",
+                                color = Color.White,
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+
+                        Column(
+                            modifier = Modifier
+                                .width(64.dp)
+                                .height(90.dp)
+                                .clickable {
+                                    onCategorySelected("Health")
+                                    navController.navigate("TaskPage")
+                                }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(64.dp)
+                                    .background(
+                                        Color(0xFF80FFA3),
+                                        shape = RoundedCornerShape(16.dp)
+                                    ),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Image(
+                                    painter = healthIcon,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .width(25.98.dp)
+                                        .height(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(5.dp))
+                            Text(
+                                text = "Health",
+                                color = Color.White,
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                        Column(
+                            modifier = Modifier
+                                .width(64.dp)
+                                .height(90.dp)
+                                .clickable {
+                                    onCategorySelected("Movie")
+                                    navController.navigate("TaskPage")
+                                }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(64.dp)
+                                    .background(
+                                        Color(0xFF80D1FF),
+                                        shape = RoundedCornerShape(16.dp)
+                                    ),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Image(
+                                    painter = movieIcon,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .width(25.98.dp)
+                                        .height(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(5.dp))
+                            Text(
+                                text = "Movie",
+                                color = Color.White,
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
+                        modifier= Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .width(64.dp)
+                                .height(90.dp)
+                                .clickable {
+                                    onCategorySelected("Music")
+                                    navController.navigate("TaskPage")
+                                }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(64.dp)
+                                    .background(
+                                        Color(0xFFFFCC80),
+                                        shape = RoundedCornerShape(16.dp)
+                                    ),
+                                verticalArrangement = Arrangement.Center,
+                                horizontalAlignment = Alignment.CenterHorizontally
+                            ) {
+                                Image(
+                                    painter = homeIcon,
+                                    contentDescription = null,
+                                    modifier = Modifier
+                                        .width(25.98.dp)
+                                        .height(22.dp)
+                                )
+                            }
+                            Spacer(modifier = Modifier.height(5.dp))
+                            Text(
+                                text = "Home",
+                                color = Color.White,
+                                style = TextStyle(
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
+                    Row(modifier= Modifier.fillMaxWidth(0.9f)){
+                        Column(
+                            modifier = Modifier
+                                .width(153.dp)
+                                .background(Color(0xFF8875FF), shape = RoundedCornerShape(10.dp))
+                                .padding(horizontal = 25.dp)
+                                .height(40.dp)
+                                .clickable {
+                                    onDismiss()
+                                },
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text(
+                                text = "Cancel",
+                                style = TextStyle(
+                                    color = Color.White,
+                                    fontSize = 16.sp,
+                                    fontWeight = FontWeight.Medium
+                                ),
+                                textAlign = TextAlign.Center
+                            )
+                        }
+                    }
                 }
             }
-        }
+        },
+        backgroundColor = Color.Transparent
     )
 }
