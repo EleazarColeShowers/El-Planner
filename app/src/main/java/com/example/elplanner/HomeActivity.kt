@@ -73,6 +73,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
@@ -1171,10 +1172,10 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel, navController: Nav
                     }
                 }
             }
-
         }
     )
 }
+
 
 @Composable
 fun CategorySelectionDialog(onDismiss: () -> Unit, onCategorySelected: (String) -> Unit, navController: NavController) {
@@ -1188,6 +1189,7 @@ fun CategorySelectionDialog(onDismiss: () -> Unit, onCategorySelected: (String) 
     val healthIcon= painterResource(id = R.drawable.health)
     val movieIcon= painterResource(id = R.drawable.movie)
     val homeIcon= painterResource(id = R.drawable.homeicon)
+
     AlertDialog(
         onDismissRequest = { onDismiss() },
         buttons = {
@@ -1208,451 +1210,131 @@ fun CategorySelectionDialog(onDismiss: () -> Unit, onCategorySelected: (String) 
                         color = Color.White,
                         modifier = Modifier.padding(bottom = 16.dp)
                     )
-                    Row(
-                        modifier= Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .width(64.dp)
-                                .height(90.dp)
-                                .clickable {
-                                    onCategorySelected("Grocery")
-                                    navController.navigate("TaskPage")
-                                }
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(64.dp)
-                                    .background(
-                                        Color(0xFFCCFF80),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Image(
-                                    painter = groceryIcon,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .width(25.98.dp)
-                                        .height(22.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(5.dp))
-                            Text(
-                                text = "Grocery",
-                                color = Color.White,
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-
-                        Column(
-                            modifier = Modifier
-                                .width(64.dp)
-                                .height(90.dp)
-                                .clickable {
-                                    onCategorySelected("Work")
-                                    navController.navigate("TaskPage")
-                                }
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(64.dp)
-                                    .background(
-                                        Color(0xFFFF9680),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Image(
-                                    painter = workIcon,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .width(25.98.dp)
-                                        .height(22.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(5.dp))
-                            Text(
-                                text = "Work",
-                                color = Color.White,
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                        Column(
-                            modifier = Modifier
-                                .width(64.dp)
-                                .height(90.dp)
-                                .clickable {
-                                    onCategorySelected("Sport")
-                                    navController.navigate("TaskPage")
-                                }
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(64.dp)
-                                    .background(
-                                        Color(0xFF80FFFF),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Image(
-                                    painter = sportIcon,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .width(25.98.dp)
-                                        .height(22.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(5.dp))
-                            Text(
-                                text = "Sport",
-                                color = Color.White,
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
+                    CategoryRow(
+                        listOf(
+                            Triple("Grocery", groceryIcon, Color(0xFFCCFF80)),
+                            Triple("Work", workIcon, Color(0xFFFF9680)),
+                            Triple("Sport", sportIcon, Color(0xFF80FFFF))
+                        ), onCategorySelected, navController
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    CategoryRow(
+                        listOf(
+                            Triple("Design", designIcon, Color(0xFF80FFD9)),
+                            Triple("University", universityIcon, Color(0xFF809CFF)),
+                            Triple("Social", socialIcon, Color(0xFFFF80EB))
+                        ), onCategorySelected, navController
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    CategoryRow(
+                        listOf(
+                            Triple("Music", musicIcon, Color(0xFFFC80FF)),
+                            Triple("Health", healthIcon, Color(0xFF80FFA3)),
+                            Triple("Movie", movieIcon, Color(0xFF80D1FF))
+                        ), onCategorySelected, navController
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    CategoryRow(
+                        listOf(
+                            Triple("Home", homeIcon, Color(0xFFFFCC80))
+                        ), onCategorySelected, navController
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(
-                        modifier= Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
+                        modifier = Modifier.fillMaxWidth(0.9f)
                     ) {
-                        Column(
-                            modifier = Modifier
-                                .width(64.dp)
-                                .height(90.dp)
-                                .clickable {
-                                    onCategorySelected("Design")
-                                    navController.navigate("TaskPage")
-                                }
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(64.dp)
-                                    .background(
-                                        Color(0xFF80FFD9),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Image(
-                                    painter = designIcon,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .width(25.98.dp)
-                                        .height(22.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(5.dp))
-                            Text(
-                                text = "Design",
-                                color = Color.White,
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-
-                        Column(
-                            modifier = Modifier
-                                .width(64.dp)
-                                .height(90.dp)
-                                .clickable {
-                                    onCategorySelected("University")
-                                    navController.navigate("TaskPage")
-                                }
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(64.dp)
-                                    .background(
-                                        Color(0xFF809CFF),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Image(
-                                    painter = universityIcon,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .width(25.98.dp)
-                                        .height(22.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(5.dp))
-                            Text(
-                                text = "University",
-                                color = Color.White,
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                        Column(
-                            modifier = Modifier
-                                .width(64.dp)
-                                .height(90.dp)
-                                .clickable {
-                                    onCategorySelected("Social")
-                                    navController.navigate("TaskPage")
-                                }
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(64.dp)
-                                    .background(
-                                        Color(0xFFFF80EB),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Image(
-                                    painter = socialIcon,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .width(25.98.dp)
-                                        .height(22.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(5.dp))
-                            Text(
-                                text = "Social",
-                                color = Color.White,
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                        
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        modifier= Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .width(64.dp)
-                                .height(90.dp)
-                                .clickable {
-                                    onCategorySelected("Music")
-                                    navController.navigate("TaskPage")
-                                }
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(64.dp)
-                                    .background(
-                                        Color(0xFFFC80FF),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Image(
-                                    painter = musicIcon,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .width(25.98.dp)
-                                        .height(22.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(5.dp))
-                            Text(
-                                text = "Music",
-                                color = Color.White,
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-
-                        Column(
-                            modifier = Modifier
-                                .width(64.dp)
-                                .height(90.dp)
-                                .clickable {
-                                    onCategorySelected("Health")
-                                    navController.navigate("TaskPage")
-                                }
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(64.dp)
-                                    .background(
-                                        Color(0xFF80FFA3),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Image(
-                                    painter = healthIcon,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .width(25.98.dp)
-                                        .height(22.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(5.dp))
-                            Text(
-                                text = "Health",
-                                color = Color.White,
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                        Column(
-                            modifier = Modifier
-                                .width(64.dp)
-                                .height(90.dp)
-                                .clickable {
-                                    onCategorySelected("Movie")
-                                    navController.navigate("TaskPage")
-                                }
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(64.dp)
-                                    .background(
-                                        Color(0xFF80D1FF),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Image(
-                                    painter = movieIcon,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .width(25.98.dp)
-                                        .height(22.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(5.dp))
-                            Text(
-                                text = "Movie",
-                                color = Color.White,
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-
-                    }
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        modifier= Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Column(
-                            modifier = Modifier
-                                .width(64.dp)
-                                .height(90.dp)
-                                .clickable {
-                                    onCategorySelected("Music")
-                                    navController.navigate("TaskPage")
-                                }
-                        ) {
-                            Column(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .height(64.dp)
-                                    .background(
-                                        Color(0xFFFFCC80),
-                                        shape = RoundedCornerShape(16.dp)
-                                    ),
-                                verticalArrangement = Arrangement.Center,
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Image(
-                                    painter = homeIcon,
-                                    contentDescription = null,
-                                    modifier = Modifier
-                                        .width(25.98.dp)
-                                        .height(22.dp)
-                                )
-                            }
-                            Spacer(modifier = Modifier.height(5.dp))
-                            Text(
-                                text = "Home",
-                                color = Color.White,
-                                style = TextStyle(
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                textAlign = TextAlign.Center
-                            )
-                        }
-                    }
-                    Row(modifier= Modifier.fillMaxWidth(0.9f)){
-                        Column(
-                            modifier = Modifier
-                                .width(153.dp)
-                                .background(Color(0xFF8875FF), shape = RoundedCornerShape(10.dp))
-                                .padding(horizontal = 25.dp)
-                                .height(40.dp)
-                                .clickable {
-                                    onDismiss()
-                                },
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(
-                                text = "Cancel",
-                                style = TextStyle(
-                                    color = Color.White,
-                                    fontSize = 16.sp,
-                                    fontWeight = FontWeight.Medium
-                                ),
-                                textAlign = TextAlign.Center
-                            )
-                        }
+                        CancelButton(onDismiss)
                     }
                 }
             }
         },
         backgroundColor = Color.Transparent
     )
+}
+
+@Composable
+fun CategoryRow(categories: List<Triple<String, Painter, Color>>, onCategorySelected: (String) -> Unit, navController: NavController) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        categories.forEach { (category, icon, backgroundColor) ->
+            CategoryItem(
+                category = category,
+                icon = icon,
+                backgroundColor = backgroundColor,
+                onCategorySelected = onCategorySelected,
+                navController = navController
+            )
+        }
+    }
+}
+
+@Composable
+fun CategoryItem(category: String, icon: Painter, backgroundColor: Color, onCategorySelected: (String) -> Unit, navController: NavController) {
+    Column(
+        modifier = Modifier
+            .width(64.dp)
+            .height(90.dp)
+            .clickable {
+                onCategorySelected(category)
+                navController.navigate("TaskPage")
+            }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(64.dp)
+                .background(
+                    backgroundColor,
+                    shape = RoundedCornerShape(16.dp)
+                ),
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Image(
+                painter = icon,
+                contentDescription = null,
+                modifier = Modifier
+                    .width(25.98.dp)
+                    .height(22.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(5.dp))
+        Text(
+            text = category,
+            color = Color.White,
+            style = TextStyle(
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            ),
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+@Composable
+fun CancelButton(onDismiss: () -> Unit) {
+    Column(
+        modifier = Modifier
+            .width(153.dp)
+            .background(Color(0xFF8875FF), shape = RoundedCornerShape(10.dp))
+            .padding(horizontal = 25.dp)
+            .height(40.dp)
+            .clickable {
+                onDismiss()
+            },
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Text(
+            text = "Cancel",
+            style = TextStyle(
+                color = Color.White,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium
+            ),
+            textAlign = TextAlign.Center
+        )
+    }
 }
