@@ -252,7 +252,7 @@ fun SearchBar(modifier: Modifier = Modifier, hint: String = "Search...", onTextC
                 .padding(end = 8.dp, start = 8.dp),
             singleLine = true,
             textStyle = TextStyle(
-                color = Color.Gray,
+                color = Color.White,
                 fontSize = 16.sp
             ),
             decorationBox = { innerTextField ->
@@ -1143,31 +1143,119 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel, navController: Nav
                             color = Color.White,
                             style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium)
                         )
-                        Row(
-                            modifier = Modifier
-                                .width(42.dp)
-                                .height(29.dp)
-                                .background(Color(0xFF363636))
-                                .border(
-                                    width = 1.dp,
-                                    color = Color(0xFF8875FF),
-                                    shape = RoundedCornerShape(4.dp)
+                        Row {
+                            if (taskItem.category?.isNotEmpty() == true) {
+                                // Define the category properties
+                                val (categoryIcon, categoryColor) = when (taskItem.category) {
+                                    "Grocery" -> Pair(
+                                        painterResource(id = R.drawable.grocery),
+                                        Color(0xFFCCFF80)
+                                    )
+
+                                    "Work" -> Pair(
+                                        painterResource(id = R.drawable.work),
+                                        Color(0xFFFF9680)
+                                    )
+
+                                    "Sport" -> Pair(
+                                        painterResource(id = R.drawable.sport),
+                                        Color(0xFF80FFFF)
+                                    )
+
+                                    "Design" -> Pair(
+                                        painterResource(id = R.drawable.design),
+                                        Color(0xFF80FFD9)
+                                    )
+
+                                    "University" -> Pair(
+                                        painterResource(id = R.drawable.university),
+                                        Color(0xFF809CFF)
+                                    )
+
+                                    "Social" -> Pair(
+                                        painterResource(id = R.drawable.social),
+                                        Color(0xFFFF80EB)
+                                    )
+
+                                    "Music" -> Pair(
+                                        painterResource(id = R.drawable.music),
+                                        Color(0xFFFC80FF)
+                                    )
+
+                                    "Health" -> Pair(
+                                        painterResource(id = R.drawable.health),
+                                        Color(0xFF80FFA3)
+                                    )
+
+                                    "Movie" -> Pair(
+                                        painterResource(id = R.drawable.movie),
+                                        Color(0xFF80D1FF)
+                                    )
+
+                                    "Home" -> Pair(
+                                        painterResource(id = R.drawable.homeicon),
+                                        Color(0xFFFFCC80)
+                                    )
+
+                                    else -> Pair(
+                                        painterResource(id = R.drawable.profileicon),
+                                        Color.Gray
+                                    )
+                                }
+
+                                // Display the category with its icon and background color
+                                Row(
+                                    modifier = Modifier
+                                        .height(29.dp)
+                                        .background(categoryColor, shape = RoundedCornerShape(8.dp))
+                                        .padding(8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Icon(
+                                        painter = categoryIcon,
+                                        contentDescription = taskItem.category,
+//                                        tint = Color.White,
+                                        modifier = Modifier.size(20.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    Text(
+                                        text = taskItem.category ?: "",
+                                        color = Color.White,
+                                        style = TextStyle(
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium
+                                        )
+                                    )
+                                }
+                                Spacer(modifier = Modifier.width(12.dp))
+                            }
+                            
+                            Row(
+                                modifier = Modifier
+                                    .width(42.dp)
+                                    .height(29.dp)
+                                    .background(Color(0xFF363636))
+                                    .border(
+                                        width = 1.dp,
+                                        color = Color(0xFF8875FF),
+                                        shape = RoundedCornerShape(4.dp)
+                                    )
+                                    .clip(RoundedCornerShape(8.dp)),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Image(
+                                    painter = painterResource(id = R.drawable.priorityflag),
+                                    contentDescription = null,
+                                    modifier = Modifier.size(14.dp)
                                 )
-                                .clip(RoundedCornerShape(8.dp)),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Image(
-                                painter = painterResource(id = R.drawable.priorityflag),
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp)
-                            )
-                            Spacer(modifier = Modifier.width(4.dp))
-                            Text(
-                                text = "${taskItem.priorityFlag}",
-                                color = Color.White,
-                                style = TextStyle(fontSize = 12.sp),
-                            )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                    text = "${taskItem.priorityFlag}",
+                                    color = Color.White,
+                                    style = TextStyle(fontSize = 12.sp),
+                                )
+                            }
                         }
                     }
                 }
