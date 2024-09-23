@@ -17,10 +17,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 
-class TaskViewModel(application: Application) : AndroidViewModel(application) {
+class TaskViewModel(application: Application, private val repository: TaskRepository) : AndroidViewModel(application) {
 
     private val taskDao: TaskDao = TaskDatabase.getDatabase(application).taskDao()
-    private val repository: TaskRepository = TaskRepository(taskDao)
+//    private val repository: TaskRepository = TaskRepository(taskDao)
 
     init {
         Log.d("TaskViewModel", "TaskViewModel Created!")
@@ -45,19 +45,19 @@ class TaskViewModel(application: Application) : AndroidViewModel(application) {
                 priorityFlag = priorityFlag ?: 0,
                 category = category
             )
-            taskDao.insertTask(taskEntity)
+            repository.insertTask(taskEntity)
         }
     }
 
     fun deleteTask(taskItem: TaskItem) {
         viewModelScope.launch {
-            taskDao.deleteTask(taskItem)
+            repository.deleteTask(taskItem)
         }
     }
 
     fun updateTask(updatedTaskItem: TaskItem) {
         viewModelScope.launch {
-            taskDao.insertTask(updatedTaskItem)
+            repository.insertTask(updatedTaskItem)
         }
     }
 }
@@ -69,7 +69,7 @@ class TaskViewModelFactory(
     @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(TaskViewModel::class.java)) {
-            return TaskViewModel(application) as T // Pass application here
+            return TaskViewModel(application, repository) as T // Pass application here
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

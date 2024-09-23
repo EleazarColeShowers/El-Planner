@@ -17,10 +17,10 @@ abstract class TaskDatabase: RoomDatabase() {
 
         val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
-                // Add the 'category' column to the 'task_item' table
                 db.execSQL("ALTER TABLE tasks ADD COLUMN category TEXT DEFAULT 'Uncategorized'")
             }
         }
+
 
         fun getDatabase(context: Context): TaskDatabase {
             return INSTANCE ?: synchronized(this) {

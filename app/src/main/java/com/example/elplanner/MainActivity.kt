@@ -55,6 +55,8 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.elplanner.data.TaskViewModel
+import com.example.elplanner.data.ViewModelProvider
 import com.example.elplanner.ui.theme.ElPlannerTheme
 import com.google.accompanist.pager.HorizontalPager
 import com.google.accompanist.pager.rememberPagerState
@@ -67,9 +69,12 @@ import kotlinx.coroutines.delay
 
 class MainActivity : ComponentActivity() {
     lateinit var auth: FirebaseAuth
+    private lateinit var taskViewModel: TaskViewModel
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         auth = FirebaseAuth.getInstance()
+        taskViewModel = ViewModelProvider.getTaskViewModel(this)
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()

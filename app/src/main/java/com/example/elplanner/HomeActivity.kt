@@ -92,6 +92,7 @@ import com.example.elplanner.data.TaskItem
 import com.example.elplanner.data.TaskRepository
 import com.example.elplanner.data.TaskViewModel
 import com.example.elplanner.data.TaskViewModelFactory
+import com.example.elplanner.data.ViewModelProvider
 import com.example.elplanner.ui.theme.ElPlannerTheme
 import com.google.firebase.auth.FirebaseAuth
 import java.time.DayOfWeek
@@ -101,11 +102,13 @@ import java.util.Calendar
 
 class HomeActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
+    private lateinit var taskViewModel: TaskViewModel
+
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         auth = FirebaseAuth.getInstance()
-
+        taskViewModel = ViewModelProvider.getTaskViewModel(this)
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -117,9 +120,6 @@ class HomeActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = Color.Black
                 ) {
-                    val taskViewModel: TaskViewModel by viewModels {
-                        TaskViewModelFactory(application, repository)
-                    }
 
                     Column(
                         horizontalAlignment = Alignment.CenterHorizontally
