@@ -18,40 +18,33 @@ import kotlinx.coroutines.launch
 
 
 class TaskViewModel(application: Application, private val repository: TaskRepository) : AndroidViewModel(application) {
-
     private val taskDao: TaskDao = TaskDatabase.getDatabase(application).taskDao()
-//    private val repository: TaskRepository = TaskRepository(taskDao)
-
-    init {
-        Log.d("TaskViewModel", "TaskViewModel Created!")
-    }
 
     var task by mutableStateOf("")
     var description by mutableStateOf("")
-    var selectedDate by mutableStateOf("")
-    var selectedTime by mutableStateOf("")
     var selectedPriority by mutableStateOf(-1)
 
-    val taskList = taskDao.getAllTasks().stateIn(viewModelScope, SharingStarted.WhileSubscribed(), emptyList())
+    val taskList = MutableStateFlow<List<TaskItem>>(emptyList())
 
-    fun addTask(task: String, description: String, date: String, time: String, priorityFlag: Int?, category: String?) {
-        viewModelScope.launch{
-            Log.d("TaskViewModel", "Adding task: $task, Description: $description, Date: $date, Time: $time")
+    fun loadUserTasks(userId: String) {
+        viewModelScope.launch {
+            repository.getUserTasks(userId).collect { tasks ->
+                taskList.value = tasks
+            }
+        }
+    }
+    fun addTask(task: String, description: String, date: String, time: String, priorityFlag: Int?, category: String?, userId: String) {
+        viewModelScope.launch {
             val taskEntity = TaskItem(
                 task = task,
                 description = description,
                 date = date,
                 time = time,
                 priorityFlag = priorityFlag ?: 0,
-                category = category
+                category = category,
+                userId = userId
             )
             repository.insertTask(taskEntity)
-        }
-    }
-
-    fun deleteTask(taskItem: TaskItem) {
-        viewModelScope.launch {
-            repository.deleteTask(taskItem)
         }
     }
 
@@ -60,8 +53,13 @@ class TaskViewModel(application: Application, private val repository: TaskReposi
             repository.insertTask(updatedTaskItem)
         }
     }
-}
 
+    fun deleteTask(taskItem: TaskItem) {
+        viewModelScope.launch {
+            repository.deleteTask(taskItem)
+        }
+    }
+}
 class TaskViewModelFactory(
     private val application: Application,
     private val repository: TaskRepository

@@ -8,12 +8,13 @@ import androidx.room.Query
 import kotlinx.coroutines.flow.Flow
 
 @Dao
-interface TaskDao { 
+interface TaskDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertTask(task: TaskItem)
 
-    @Query("SELECT * FROM tasks")
-    fun getAllTasks(): Flow<List<TaskItem>>
+    // Filter tasks by userId
+    @Query("SELECT * FROM tasks WHERE userId = :userId")
+    fun getUserTasks(userId: String): Flow<List<TaskItem>>
 
     @Delete
     suspend fun deleteTask(task: TaskItem)

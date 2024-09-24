@@ -9,10 +9,12 @@ class TaskRepository(private val taskDao: TaskDao) {
         taskDao.insertTask(taskItem)
     }
 
-    suspend fun deleteTask(taskItem: TaskItem){
+    suspend fun deleteTask(taskItem: TaskItem) {
         taskDao.deleteTask(taskItem)
     }
-    fun getAllTasks(): Flow<List<TaskItem>> {
-        return taskDao.getAllTasks()
+
+    // Add method to get tasks for the current user
+    fun getUserTasks(userId: String): Flow<List<TaskItem>> {
+        return taskDao.getUserTasks(userId)
     }
 }

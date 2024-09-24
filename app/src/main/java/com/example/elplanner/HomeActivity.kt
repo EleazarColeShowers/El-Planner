@@ -1019,17 +1019,20 @@ fun TaskPage(navController: NavController, taskViewModel: TaskViewModel, searchQ
     val selectedDate = navController.previousBackStackEntry?.savedStateHandle?.get<String>("selectedDate")
     val selectedTime = navController.previousBackStackEntry?.savedStateHandle?.get<String>("selectedTime")
     val priorityFlag = navController.previousBackStackEntry?.savedStateHandle?.get<Int>("priorityFlag")
+    val userId = FirebaseAuth.getInstance().currentUser?.uid
     Log.d("AddTask", "Task: $task, Description: $description, Priorityflag: $priorityFlag")
     LaunchedEffect(task) {
         task?.let { it ->
             if (taskList.none { it.task == task }) {
                 if (description != null) {
-                    taskViewModel.addTask(it, description, selectedDate ?: "", selectedTime ?: "", priorityFlag, category = "")
+                    if (userId != null) {
+                        taskViewModel.addTask(it, description, selectedDate ?: "", selectedTime ?: "", priorityFlag, category = "", userId =userId )
+                    }
                 }
             }
         }
     }
-    var filteredTasks= if(searchQuery.isNotBlank()){
+    val filteredTasks= if(searchQuery.isNotBlank()){
         taskList.filter {
             it.task.contains(searchQuery, ignoreCase = true)||
                     it.date.contains(searchQuery, ignoreCase = true)

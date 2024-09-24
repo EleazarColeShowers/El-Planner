@@ -96,7 +96,7 @@ class MainActivity : ComponentActivity() {
                             composable("Carousel") { Carousel(navController= navController) }
                             composable("Welcome"){ WelcomePage(navController)}
                             composable("CreateAccount"){ CreateAccountPage(auth)}
-                            composable("Login"){ LoginPage(auth) }
+                            composable("Login"){ LoginPage(auth, taskViewModel) }
                         }
                     }
                 }
@@ -391,27 +391,31 @@ fun WelcomePage(navController: NavController) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateAccountPage(auth: FirebaseAuth){
+fun CreateAccountPage(auth: FirebaseAuth) {
 
     var username by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    val context= LocalContext.current
+    val context = LocalContext.current
 
-    Column(modifier = Modifier.fillMaxSize()){
-        Spacer(modifier = Modifier.padding(53.dp))
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp)
+    ) {
+        Spacer(modifier = Modifier.height(53.dp))
+
         Text(
             text = "Register",
             style = TextStyle(
                 color = Color.White,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold
-            ),
-            modifier = Modifier.padding(start = 24.dp)
-
-
+            )
         )
+
         Spacer(modifier = Modifier.height(23.dp))
+
         OutlinedTextField(
             value = username,
             onValueChange = { username = it },
@@ -425,11 +429,11 @@ fun CreateAccountPage(auth: FirebaseAuth){
                 focusedBorderColor = Color(0xFF8875FF),
                 unfocusedBorderColor = Color(0xFF8875FF)
             ),
-            textStyle = TextStyle(
-                color = Color.White
-            )
+            textStyle = TextStyle(color = Color.White)
         )
+
         Spacer(modifier = Modifier.height(25.dp))
+
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -443,11 +447,11 @@ fun CreateAccountPage(auth: FirebaseAuth){
                 focusedBorderColor = Color(0xFF8875FF),
                 unfocusedBorderColor = Color(0xFF8875FF)
             ),
-            textStyle = TextStyle(
-                color = Color.White
-            )
+            textStyle = TextStyle(color = Color.White)
         )
+
         Spacer(modifier = Modifier.height(25.dp))
+
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -461,31 +465,35 @@ fun CreateAccountPage(auth: FirebaseAuth){
                 focusedBorderColor = Color(0xFF8875FF),
                 unfocusedBorderColor = Color(0xFF8875FF)
             ),
-            textStyle = TextStyle(
-                color = Color.White
-            )
+            textStyle = TextStyle(color = Color.White)
         )
+
         Spacer(modifier = Modifier.height(80.dp))
+
         Box(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 17.dp),
+            modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .background(Color(0xFF8875FF), shape = RoundedCornerShape(20.dp))
-                    .padding(horizontal = 25.dp)
-                    .height(40.dp)
                     .clickable {
-                        performSignUp(auth, context as ComponentActivity, email, password,
-                            usernameTxt = username, onSuccess = {
-                            val intent = Intent(context, HomeActivity::class.java)
-                            intent.putExtra("username", username)
-                            context.startActivity(intent)
-                        })
-                    },
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                        performSignUp(
+                            auth,
+                            context as ComponentActivity,
+                            email,
+                            password,
+                            usernameTxt = username,
+                            onSuccess = {
+                                val intent = Intent(context, HomeActivity::class.java)
+                                intent.putExtra("username", username)
+                                context.startActivity(intent)
+                            }
+                        )
+                    }
+                    .padding(vertical = 10.dp),  // Adjusted padding for consistency
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "Register",
@@ -501,28 +509,33 @@ fun CreateAccountPage(auth: FirebaseAuth){
     }
 }
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun LoginPage(auth: FirebaseAuth){
+fun LoginPage(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
 
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-    val context= LocalContext.current
+    val context = LocalContext.current
 
-    Column(modifier = Modifier.fillMaxSize()){
-        Spacer(modifier = Modifier.padding(53.dp))
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(horizontal = 24.dp)
+    ) {
+        Spacer(modifier = Modifier.height(53.dp))
+
         Text(
             text = "Login",
             style = TextStyle(
                 color = Color.White,
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold
-            ),
-            modifier = Modifier.padding(start = 24.dp)
-
-
+            )
         )
+
         Spacer(modifier = Modifier.height(23.dp))
+
         OutlinedTextField(
             value = email,
             onValueChange = { email = it },
@@ -536,11 +549,11 @@ fun LoginPage(auth: FirebaseAuth){
                 focusedBorderColor = Color(0xFF8875FF),
                 unfocusedBorderColor = Color(0xFF8875FF)
             ),
-            textStyle = TextStyle(
-                color = Color.White
-            )
+            textStyle = TextStyle(color = Color.White)
         )
+
         Spacer(modifier = Modifier.height(25.dp))
+
         OutlinedTextField(
             value = password,
             onValueChange = { password = it },
@@ -554,30 +567,36 @@ fun LoginPage(auth: FirebaseAuth){
                 focusedBorderColor = Color(0xFF8875FF),
                 unfocusedBorderColor = Color(0xFF8875FF)
             ),
-            textStyle = TextStyle(
-                color = Color.White
-            )
+            textStyle = TextStyle(color = Color.White)
         )
+
         Spacer(modifier = Modifier.height(80.dp))
+
         Box(
-            modifier = Modifier.fillMaxWidth().padding(bottom = 17.dp),
+            modifier = Modifier.fillMaxWidth(),
             contentAlignment = Alignment.Center
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .background(Color(0xFF8875FF), shape = RoundedCornerShape(20.dp))
-                    .padding(horizontal = 25.dp)
-                    .height(40.dp)
-                    .clickable{
-                        performLogin(auth, context as ComponentActivity, email, password, onSuccess = { username ->
-                            val intent = Intent(context, HomeActivity::class.java)
-                            intent.putExtra("username", username)
-                            context.startActivity(intent)
-                        })
-                    },
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.Center
+                    .clickable {
+                        performLogin(
+                            auth,
+                            context as ComponentActivity,
+                            email,
+                            password,
+                            onSuccess = {  userId ->
+                                // Once logged in, load tasks for this user
+                                taskViewModel.loadUserTasks(userId)
+                                val intent = Intent(context, HomeActivity::class.java)
+//                                intent.putExtra("username", username)
+                                context.startActivity(intent)
+                            }
+                        )
+                    }
+                    .padding(vertical = 10.dp),  // Adjusted padding for better alignment
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
                     text = "Login",
@@ -592,6 +611,7 @@ fun LoginPage(auth: FirebaseAuth){
         }
     }
 }
+
 
 fun performSignUp(auth: FirebaseAuth, context: ComponentActivity, email: String, password: String, usernameTxt: String, onSuccess: () -> Unit) {
     if (email.isEmpty() || password.isEmpty() || usernameTxt.isEmpty()) {
@@ -637,7 +657,7 @@ fun performLogin(
     context: ComponentActivity,
     email: String,
     password: String,
-    onSuccess: (String) -> Unit,  // Accept a callback with user ID and optional URI
+    onSuccess: (String) -> Unit,
 ) {
     if (email.isEmpty() || password.isEmpty()) {
         Toast.makeText(context, "Please fill all fields", Toast.LENGTH_SHORT).show()
@@ -650,7 +670,6 @@ fun performLogin(
                 if (user != null) {
                     val userId = user.uid
                     onSuccess(userId)
-
                 }
                 Toast.makeText(context, "Successfully logged in", Toast.LENGTH_SHORT).show()
             } else {

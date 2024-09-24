@@ -5,12 +5,12 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "tasks")
 data class TaskItem(
-    @PrimaryKey(autoGenerate = true) val id: Int = 0,  // This is the primary key
+    @PrimaryKey(autoGenerate = true) val id: Int = 0,
     val task: String,
     val description: String?,
     val date: String,
     val time: String,
     val priorityFlag: Int?,
-    var category: String? = null // Add a nullable category field
-
+    var category: String? = null,
+    val userId: String // Add userId to track the user who created the task
 )
