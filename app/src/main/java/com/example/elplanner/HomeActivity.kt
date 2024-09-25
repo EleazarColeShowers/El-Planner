@@ -3,6 +3,7 @@ package com.example.elplanner
 //noinspection UsingMaterialAndMaterial3Libraries
 //noinspection UsingMaterialAndMaterial3Libraries
 //noinspection UsingMaterialAndMaterial3Libraries
+import android.app.Activity
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
@@ -150,6 +151,8 @@ fun Index(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
         Column(
             modifier = Modifier.weight(1f)
         ) {
+            val navigateTo = (LocalContext.current as Activity).intent.getStringExtra("navigate_to")
+
             HomePage(auth)
             SearchBar(
                 hint = "Search books...",
@@ -168,6 +171,11 @@ fun Index(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
                 composable("TimeView"){ TimeView(navController, taskViewModel)}
                 composable("PriorityFlag"){ PriorityFlag(navController, taskViewModel)}
                 composable("TaskPage"){ TaskPage(navController, taskViewModel, searchQuery.value)}
+            }
+            LaunchedEffect(navigateTo) {
+                if (navigateTo == "TaskPage") {
+                    navController.navigate("taskPage")
+                }
             }
 
         }
@@ -1021,6 +1029,14 @@ fun TaskPage(navController: NavController, taskViewModel: TaskViewModel, searchQ
     val priorityFlag = navController.previousBackStackEntry?.savedStateHandle?.get<Int>("priorityFlag")
     val userId = FirebaseAuth.getInstance().currentUser?.uid
     Log.d("AddTask", "Task: $task, Description: $description, Priorityflag: $priorityFlag")
+    LaunchedEffect(userId) {
+        if (userId != null) {
+            taskViewModel.loadUserTasks(userId)  // Load tasks for the logged-in user
+        } else {
+            navController.navigate("EmptyPage") // Navigate to login if no user is logged in
+        }
+    }
+
     LaunchedEffect(task) {
         task?.let { it ->
             if (taskList.none { it.task == task }) {

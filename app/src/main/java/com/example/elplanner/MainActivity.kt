@@ -89,6 +89,7 @@ class MainActivity : ComponentActivity() {
                     ) {
                         val navigateTo = (LocalContext.current as Activity).intent.getStringExtra("navigate_to")
 
+                        val userId = FirebaseAuth.getInstance().currentUser?.uid
 
                         val navController = rememberNavController()
                         NavHost(navController = navController, startDestination = if (navigateTo == "Carousel") "Carousel" else "splash") {
@@ -107,13 +108,15 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun SplashPage(navController: NavController, auth: FirebaseAuth){
-    val splashIcon= painterResource(id = R.drawable.splashicon)
-    Column (
+fun SplashPage(navController: NavController, auth: FirebaseAuth) {
+    val splashIcon = painterResource(id = R.drawable.splashicon)
+    val context = LocalContext.current
+
+    Column(
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center,
         modifier = Modifier.fillMaxSize()
-    ){
+    ) {
         Image(
             painter = splashIcon,
             contentDescription = null,
@@ -128,31 +131,23 @@ fun SplashPage(navController: NavController, auth: FirebaseAuth){
                 color = Color.White
             )
         )
-
     }
-    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         delay(1500)
         val currentUser = auth.currentUser
         if (currentUser != null) {
-            // User is logged in, navigate to HomeActivity
-            val intent = Intent(context, HomeActivity::class.java)
+            val intent = Intent(context, HomeActivity::class.java).apply {
+                putExtra("navigate_to", "TaskPage")
+            }
             context.startActivity(intent)
         } else {
-            // User is not logged in, navigate to the carousel screen
             navController.navigate("carousel") {
                 popUpTo("splash") { inclusive = true }
             }
         }
-        navController.navigate("carousel") {
-            popUpTo("splash") { inclusive = true }
-        }
     }
-
-
 }
-
 data class CarouselItem(
     val id: Int,
     @DrawableRes val imageResId: Int,
