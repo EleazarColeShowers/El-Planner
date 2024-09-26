@@ -11,7 +11,6 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -92,7 +91,6 @@ import com.example.elplanner.data.TaskDatabase
 import com.example.elplanner.data.TaskItem
 import com.example.elplanner.data.TaskRepository
 import com.example.elplanner.data.TaskViewModel
-import com.example.elplanner.data.TaskViewModelFactory
 import com.example.elplanner.data.ViewModelProvider
 import com.example.elplanner.ui.theme.ElPlannerTheme
 import com.google.firebase.auth.FirebaseAuth
@@ -113,8 +111,8 @@ class HomeActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        val taskDao = TaskDatabase.getDatabase(application).taskDao()
-        val repository = TaskRepository(taskDao)
+//        val taskDao = TaskDatabase.getDatabase(application).taskDao()
+//        val repository = TaskRepository(taskDao)
         setContent {
             ElPlannerTheme {
                 Surface(
@@ -141,7 +139,7 @@ class HomeActivity : ComponentActivity() {
 @Composable
 fun Index(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
     val navController = rememberNavController()
-    val application = HomeActivity().application // Or `this.application` in an Activity
+//    val application = HomeActivity().application // Or `this.application` in an Activity
     val taskList by taskViewModel.taskList.collectAsState()
     val searchQuery = remember { mutableStateOf("") }
 
@@ -403,7 +401,7 @@ fun BottomBar(navController: NavController) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddTask(navController: NavController, taskViewModel: TaskViewModel) {
-    val context = LocalContext.current
+//    val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxSize(),
@@ -1031,9 +1029,9 @@ fun TaskPage(navController: NavController, taskViewModel: TaskViewModel, searchQ
     Log.d("AddTask", "Task: $task, Description: $description, Priorityflag: $priorityFlag")
     LaunchedEffect(userId) {
         if (userId != null) {
-            taskViewModel.loadUserTasks(userId)  // Load tasks for the logged-in user
+            taskViewModel.loadUserTasks(userId)
         } else {
-            navController.navigate("EmptyPage") // Navigate to login if no user is logged in
+            navController.navigate("EmptyPage")
         }
     }
 
@@ -1146,6 +1144,9 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel, navController: Nav
                     .background(Color(0xFF363636), shape = RoundedCornerShape(6.dp))
                     .padding(16.dp),
             ) {
+                //TODO: add a customized checkbox column for completed status to check if task is completed(boolean)
+                //TODO: add a clickable for each task that opens a dialog with the task description
+                //TODO: inspect and make changes to code as the ui isn't smooth yet
                 Column {
                     Text(
                         text = taskItem.task,
@@ -1282,7 +1283,6 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel, navController: Nav
         }
     )
 }
-
 
 @Composable
 fun CategorySelectionDialog(onDismiss: () -> Unit, onCategorySelected: (String) -> Unit, navController: NavController) {
