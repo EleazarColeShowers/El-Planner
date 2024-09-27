@@ -333,6 +333,7 @@ fun EmptyPage(){
 
 @Composable
 fun BottomBar(navController: NavController) {
+    val context = LocalContext.current
     val items = listOf("Index", "Calendar", "Focus", "Profile")
     val icons = mapOf(
         "Index" to R.drawable.indexicon,
@@ -345,7 +346,6 @@ fun BottomBar(navController: NavController) {
 
     Box(
         modifier = Modifier.fillMaxWidth(),
-
     ) {
         BottomNavigation(
             backgroundColor = Color(0xFF363636),
@@ -371,7 +371,22 @@ fun BottomBar(navController: NavController) {
                         )
                     },
                     selected = selectedIndex.intValue == index,
-                    onClick = { selectedIndex.intValue = index }
+                    onClick = {
+                        selectedIndex.intValue = index
+                        when (item) {
+                            "Profile" -> {
+                                // Navigate to ProfileActivity using Intent
+                                val intent = Intent(context, ProfileActivity::class.java)
+                                context.startActivity(intent)
+                            }
+                            // Add navigation for other items as needed
+                            else -> {
+                                // Handle navigation for other items here
+                                // For example:
+                                // navController.navigate(item)
+                            }
+                        }
+                    }
                 )
             }
         }
@@ -396,7 +411,6 @@ fun BottomBar(navController: NavController) {
         }
     }
 }
-
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
