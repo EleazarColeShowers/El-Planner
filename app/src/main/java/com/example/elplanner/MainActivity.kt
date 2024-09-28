@@ -618,7 +618,7 @@ fun performSignUp(auth: FirebaseAuth, context: ComponentActivity, email: String,
         if (task.isSuccessful) {
             createUser(username= usernameTxt)
                 val uid = auth.currentUser?.uid
-                createUser(username = String.toString())
+                createUser(username = usernameTxt)
 
             val intent = Intent(context, HomeActivity::class.java)
             context.startActivity(intent)

@@ -375,9 +375,13 @@ fun BottomBar(navController: NavController) {
                         selectedIndex.intValue = index
                         when (item) {
                             "Profile" -> {
-                                // Navigate to ProfileActivity using Intent
                                 val intent = Intent(context, ProfileActivity::class.java)
                                 context.startActivity(intent)
+                            }
+                            "Index"->{
+                                val intent= Intent(context, HomeActivity::class.java)
+                                context.startActivity(intent)
+
                             }
                             // Add navigation for other items as needed
                             else -> {
