@@ -95,10 +95,14 @@ fun ProfilePage(){
         ) {
             Header()
             Spacer(modifier = Modifier.height(25.dp))
-            NavHost(navController = navController, startDestination = "Settings" ) {
-                composable("Settings") { Settings() }
-
-            }
+//            NavHost(navController = navController, startDestination = "Settings" ) {
+//                composable("Settings") { Settings() }
+//                composable("Accounts"){ Accounts()}
+//
+//            }
+            Settings()
+            Accounts()
+            ElAbout()
         }
         BottomBar(navController)
     }
@@ -123,7 +127,6 @@ fun Header() {
             })
         }
     }
-
     Column(Modifier.fillMaxWidth(0.9f)) {
         Row(
             modifier = Modifier
@@ -156,11 +159,13 @@ fun Header() {
     }
 }
 
+// TODO: add two buttons for complete and incomplete tasks"
+
 @Composable
 fun Settings(){
     val settingsIcon= painterResource(id = R.drawable.seetingsicon)
     val nextIcon= painterResource(id = R.drawable.nexticon)
-    Column(Modifier.fillMaxWidth(0.9f)){
+    Column(Modifier.fillMaxWidth()){
         Text(
             text = "Settings",
             fontSize = 14.sp,
@@ -171,7 +176,6 @@ fun Settings(){
         Row(
             modifier = Modifier
                 .fillMaxWidth(),
-//            verticalAlignment = Alignment.CenterVertically // To align items vertically
         ) {
             Image(
                 painter = settingsIcon,
@@ -184,7 +188,7 @@ fun Settings(){
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Light,
                 color = Color.White,
-                modifier = Modifier.weight(1f)  // Pushes the nextIcon to the end of the row
+                modifier = Modifier.weight(1f)
             )
             Image(
                 painter = nextIcon,
@@ -192,11 +196,155 @@ fun Settings(){
                 modifier = Modifier.size(24.dp)
             )
         }
-        
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
 @Composable
 fun Accounts(){
+    val profileIcon= painterResource(id = R.drawable.profileicon)
+    val passwordIcon= painterResource(id = R.drawable.changepassword)
+    val nextIcon= painterResource(id = R.drawable.nexticon)
+    Column(Modifier.fillMaxWidth()){
+        Text(
+            text = "Account",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Light,
+            color= Color.Gray
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+        ) {
+            Image(
+                painter = profileIcon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                text = "Change account name",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Light,
+                color = Color.White,
+                modifier = Modifier.weight(1f)
+            )
+            Image(
+                painter = nextIcon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+        ) {
+            Image(
+                painter = passwordIcon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                text = "Change account password",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Light,
+                color = Color.White,
+                modifier = Modifier.weight(1f)
+            )
+            Image(
+                painter = nextIcon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+    }
+}
 
+@Composable
+fun ElAbout(){
+    val aboutIcon= painterResource(id = R.drawable.about)
+    val faqIcon= painterResource(id = R.drawable.faq)
+    val logoutIcon= painterResource(id = R.drawable.logout)
+    val nextIcon= painterResource(id = R.drawable.nexticon)
+    Column(Modifier.fillMaxWidth()){
+        Text(
+            text = "El Planner",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Light,
+            color= Color.Gray
+        )
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+        ) {
+            Image(
+                painter = aboutIcon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                text = "About US",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Light,
+                color = Color.White,
+                modifier = Modifier.weight(1f)
+            )
+            Image(
+                painter = nextIcon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+        ) {
+            Image(
+                painter = faqIcon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                text = "FAQ",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Light,
+                color = Color.White,
+                modifier = Modifier.weight(1f)
+            )
+            Image(
+                painter = nextIcon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+        }
+        Spacer(modifier = Modifier.height(17.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth(),
+        ) {
+            Image(
+                painter = logoutIcon,
+                contentDescription = null,
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(10.dp))
+            Text(
+                text = "Log out",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Light,
+                color = Color(0xFFFF4949),
+                modifier = Modifier.weight(1f)
+            )
+
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+    }
 }
