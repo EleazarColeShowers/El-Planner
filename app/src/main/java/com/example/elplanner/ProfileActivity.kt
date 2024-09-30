@@ -1,6 +1,7 @@
 package com.example.elplanner
 
 import android.app.Activity
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
@@ -8,6 +9,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -73,7 +75,7 @@ class ProfileActivity: ComponentActivity() {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            ProfilePage()
+                            ProfilePage(auth)
                         }
                     }
                 }
@@ -83,7 +85,7 @@ class ProfileActivity: ComponentActivity() {
 }
 
 @Composable
-fun ProfilePage(){
+fun ProfilePage(auth: FirebaseAuth){
     val navController = rememberNavController()
     Column(
         modifier = Modifier.fillMaxSize()
@@ -95,14 +97,9 @@ fun ProfilePage(){
         ) {
             Header()
             Spacer(modifier = Modifier.height(25.dp))
-//            NavHost(navController = navController, startDestination = "Settings" ) {
-//                composable("Settings") { Settings() }
-//                composable("Accounts"){ Accounts()}
-//
-//            }
             Settings()
             Accounts()
-            ElAbout()
+            ElAbout(auth)
         }
         BottomBar(navController)
     }
@@ -265,11 +262,12 @@ fun Accounts(){
 }
 
 @Composable
-fun ElAbout(){
+fun ElAbout(auth: FirebaseAuth){
     val aboutIcon= painterResource(id = R.drawable.about)
     val faqIcon= painterResource(id = R.drawable.faq)
     val logoutIcon= painterResource(id = R.drawable.logout)
     val nextIcon= painterResource(id = R.drawable.nexticon)
+    val context= LocalContext.current
     Column(Modifier.fillMaxWidth()){
         Text(
             text = "El Planner",
@@ -328,7 +326,13 @@ fun ElAbout(){
         Spacer(modifier = Modifier.height(17.dp))
         Row(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .clickable {
+                    auth.signOut()
+                    val intent = Intent(context, MainActivity::class.java)
+                    intent.putExtra("navigate_to", "Carousel")
+                    context.startActivity(intent)
+                },
         ) {
             Image(
                 painter = logoutIcon,
@@ -343,7 +347,6 @@ fun ElAbout(){
                 color = Color(0xFFFF4949),
                 modifier = Modifier.weight(1f)
             )
-
         }
         Spacer(modifier = Modifier.height(16.dp))
     }

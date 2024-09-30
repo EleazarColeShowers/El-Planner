@@ -213,22 +213,6 @@ fun HomePage(auth: FirebaseAuth) {
                 ),
                 modifier = Modifier.align(Alignment.CenterVertically)
             )
-            Text(
-                text ="LOG OUT",
-                style = TextStyle(
-                    color = Color(0xFF8875FF),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Medium
-                ),
-                modifier = Modifier
-                    .align(Alignment.CenterVertically)
-                    .clickable {
-                        auth.signOut()
-                        val intent = Intent(context, MainActivity::class.java)
-                        intent.putExtra("navigate_to", "Carousel")
-                        context.startActivity(intent)
-                    }
-            )
         }
     }
 }
