@@ -12,5 +12,6 @@ data class TaskItem(
     val time: String,
     val priorityFlag: Int?,
     var category: String? = null,
-    val userId: String // Add userId to track the user who created the task
+    val userId: String,
+    var completed: Boolean = false
 )

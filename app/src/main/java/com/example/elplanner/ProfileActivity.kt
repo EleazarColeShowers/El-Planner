@@ -1,16 +1,20 @@
 package com.example.elplanner
 
 import android.app.Activity
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,10 +24,18 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -37,6 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -75,7 +88,7 @@ class ProfileActivity: ComponentActivity() {
                         Column(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            ProfilePage(auth)
+                            ProfilePage(auth, taskViewModel)
                         }
                     }
                 }
@@ -84,8 +97,9 @@ class ProfileActivity: ComponentActivity() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ProfilePage(auth: FirebaseAuth){
+fun ProfilePage(auth: FirebaseAuth,taskViewModel: TaskViewModel){
     val navController = rememberNavController()
     Column(
         modifier = Modifier.fillMaxSize()
@@ -97,6 +111,8 @@ fun ProfilePage(auth: FirebaseAuth){
         ) {
             Header()
             Spacer(modifier = Modifier.height(25.dp))
+            TaskProgress(taskViewModel)
+            Spacer(modifier = Modifier.height(32.dp))
             Settings()
             Accounts()
             ElAbout(auth)
@@ -110,20 +126,33 @@ fun Header() {
     val firebaseAuth = FirebaseAuth.getInstance()
     val currentUser = firebaseAuth.currentUser
     var username by remember { mutableStateOf<String?>(null) }
+    val context = LocalContext.current
+    val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+
     if (currentUser != null) {
         val userId = currentUser.uid
         val databaseRef = FirebaseDatabase.getInstance().getReference("users/$userId")
         LaunchedEffect(userId) {
             databaseRef.addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    username = snapshot.getValue(String::class.java) ?: "User"
+                    val fetchedUsername = snapshot.getValue(String::class.java) ?: "User"
+                    username = fetchedUsername
+                    with(sharedPreferences.edit()) {
+                        putString("username", fetchedUsername)
+                        apply()
+                    }
                 }
+
                 override fun onCancelled(error: DatabaseError) {
                     username = "Error"
                 }
             })
         }
     }
+    if (username == null) {
+        username = sharedPreferences.getString("username", "Loading...")
+    }
+
     Column(Modifier.fillMaxWidth(0.9f)) {
         Row(
             modifier = Modifier
@@ -157,6 +186,52 @@ fun Header() {
 }
 
 // TODO: add two buttons for complete and incomplete tasks"
+@Composable
+fun TaskProgress(taskViewModel: TaskViewModel){
+    val taskList by taskViewModel.taskList.collectAsState()
+    val tasksLeft = taskList.count { !it.completed }
+    val tasksDone = taskList.count { it.completed }
+    Row(
+        Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween
+        ){
+        Row(
+            Modifier
+                .width(154.dp)
+                .height(58.dp)
+                .background(Color(0xFF363636)),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ){
+            Text(
+                text = "$tasksLeft tasks left",
+                style = androidx.compose.ui.text.TextStyle(
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White
+                )
+            )
+        }
+        Row(
+            Modifier
+                .width(154.dp)
+                .height(58.dp)
+                .background(Color(0xFF363636)),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.Center
+        ) {
+            Text(
+                text = "$tasksDone tasks done",
+                style = androidx.compose.ui.text.TextStyle(
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Color.White
+                )
+            )
+
+        }
+    }
+}
 
 @Composable
 fun Settings(){
@@ -197,11 +272,86 @@ fun Settings(){
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun Accounts(){
+    val context= LocalContext.current
     val profileIcon= painterResource(id = R.drawable.profileicon)
     val passwordIcon= painterResource(id = R.drawable.changepassword)
     val nextIcon= painterResource(id = R.drawable.nexticon)
+    var showDialog by remember { mutableStateOf(false) }
+    var newUsername by remember { mutableStateOf("") }
+
+    if (showDialog) {
+        Dialog(onDismissRequest = { showDialog = false }) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .height(225.dp)
+                    .background(
+                        color = Color(0xFF363636),
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .padding(16.dp)
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Text(
+                        text = "Change Account Name",
+                        color = Color.White,
+                        style = androidx.compose.ui.text.TextStyle(
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // TextField to input new username
+                    TextField(
+                        value = newUsername,
+                        onValueChange = { newUsername = it },
+                        placeholder = { Text("Enter new account name", color = Color.Gray) },
+                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.Black),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        colors = TextFieldDefaults.textFieldColors(
+                            cursorColor = Color.White,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    TextButton(
+                        onClick = {
+                            if (newUsername.isNotEmpty()) {
+                                updateUsername(
+                                    newUsername,
+                                    onSuccess = {
+                                        Toast.makeText(context, "Username updated!", Toast.LENGTH_SHORT).show()
+                                        showDialog = false
+                                    },
+                                    onFailure = {
+                                        Toast.makeText(context, "Failed to update username", Toast.LENGTH_SHORT).show()
+                                    }
+                                )
+                            } else {
+                                Toast.makeText(context, "Please enter a valid username", Toast.LENGTH_SHORT).show()
+                            }
+                        },
+                        modifier = Modifier.align(Alignment.End) // Align button to the right
+                    ) {
+                        Text(text = "Update", color = Color.White)
+                    }
+                }
+            }
+        }
+    }
     Column(Modifier.fillMaxWidth()){
         Text(
             text = "Account",
@@ -212,7 +362,9 @@ fun Accounts(){
         Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .clickable { showDialog = true }
+            ,
         ) {
             Image(
                 painter = profileIcon,
@@ -349,5 +501,24 @@ fun ElAbout(auth: FirebaseAuth){
             )
         }
         Spacer(modifier = Modifier.height(16.dp))
+    }
+}
+
+fun updateUsername(newUsername: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+    val firebaseAuth = FirebaseAuth.getInstance()
+    val currentUser = firebaseAuth.currentUser
+    if (currentUser != null) {
+        val userId = currentUser.uid
+        val databaseRef = FirebaseDatabase.getInstance().getReference("users/$userId")
+
+        databaseRef.setValue(newUsername)
+            .addOnSuccessListener {
+                onSuccess()
+            }
+            .addOnFailureListener { exception ->
+                onFailure(exception)
+            }
+    } else {
+        onFailure(Exception("User not authenticated"))
     }
 }

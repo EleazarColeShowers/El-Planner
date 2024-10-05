@@ -39,6 +39,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.Checkbox
 import androidx.compose.material.DismissDirection
 import androidx.compose.material.DismissValue
 import androidx.compose.material.ExperimentalMaterialApi
@@ -56,6 +57,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.material3.TimeInput
 import androidx.compose.material3.darkColorScheme
@@ -83,6 +85,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -102,8 +105,6 @@ import java.util.Calendar
 class HomeActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var taskViewModel: TaskViewModel
-
-
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         auth = FirebaseAuth.getInstance()
@@ -111,8 +112,6 @@ class HomeActivity : ComponentActivity() {
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-//        val taskDao = TaskDatabase.getDatabase(application).taskDao()
-//        val repository = TaskRepository(taskDao)
         setContent {
             ElPlannerTheme {
                 Surface(
@@ -139,7 +138,6 @@ class HomeActivity : ComponentActivity() {
 @Composable
 fun Index(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
     val navController = rememberNavController()
-//    val application = HomeActivity().application // Or `this.application` in an Activity
     val taskList by taskViewModel.taskList.collectAsState()
     val searchQuery = remember { mutableStateOf("") }
 
@@ -218,8 +216,7 @@ fun HomePage(auth: FirebaseAuth) {
 }
 
 @Composable
-fun SearchBar(modifier: Modifier = Modifier, hint: String = "Search...", onTextChange: (String) -> Unit, onSearchClicked: () -> Unit, textState: MutableState<String> = remember { mutableStateOf("") }
-) {
+fun SearchBar(modifier: Modifier = Modifier, hint: String = "Search...", onTextChange: (String) -> Unit, onSearchClicked: () -> Unit, textState: MutableState<String> = remember { mutableStateOf("") }) {
     val text = textState.value
 
     Row(
@@ -567,8 +564,6 @@ fun DateTime(navController: NavController, taskViewModel: TaskViewModel) {
                                     "selectedDate",
                                     date.toString()
                                 )
-
-                                // Navigate to TimeView
                                 navController.navigate("TimeView")
                             }
                         },
@@ -1077,6 +1072,7 @@ fun TaskPage(navController: NavController, taskViewModel: TaskViewModel, searchQ
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel, navController: NavController) {
+    var showDescriptionDialog by remember { mutableStateOf(false) } // State for description dialog
     var showDialog by remember { mutableStateOf(false) }
     val dismissState = rememberDismissState { dismissValue ->
         when (dismissValue) {
@@ -1101,6 +1097,50 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel, navController: Nav
             navController = navController
         )
     }
+    if (showDescriptionDialog) {
+        Dialog(onDismissRequest = { showDescriptionDialog = false }) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .height(225.dp)
+                    .background(
+                        color = Color(0xFF363636),
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .padding(16.dp)
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Text(
+                        text = "Task Description",
+                        color = Color.White,
+                        style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    Text(
+                        text = taskItem.description ?: "No description available",
+                        color = Color.White,
+                        style = TextStyle(fontSize = 16.sp)
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    // Confirm button
+                    TextButton(
+                        onClick = { showDescriptionDialog = false },
+                        modifier = Modifier.align(Alignment.End) // Align button to the right
+                    ) {
+                        Text(text = "OK", color = Color.White)
+                    }
+                }
+            }
+        }
+    }
+
 
     SwipeToDismiss(
         state = dismissState,
@@ -1144,11 +1184,27 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel, navController: Nav
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
                     .background(Color(0xFF363636), shape = RoundedCornerShape(6.dp))
-                    .padding(16.dp),
+                    .padding(16.dp)
+                    .clickable { showDescriptionDialog = true },
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                //TODO: add a customized checkbox column for completed status to check if task is completed(boolean)
                 //TODO: add a clickable for each task that opens a dialog with the task description
                 //TODO: inspect and make changes to code as the ui isn't smooth yet
+                Box(
+                    modifier = Modifier
+                        .size(16.dp)
+                        .clip(CircleShape)
+                        .background(if (taskItem.completed) Color(0xFF8875FF) else Color.Transparent) // Purple if completed, transparent otherwise
+                        .border(
+                            width = 1.dp,
+                            color = Color.White,
+                            shape = CircleShape
+                        )
+                        .clickable {
+                            taskViewModel.updateTask(taskItem.copy(completed = !taskItem.completed)) // Toggle the completed status
+                        },
+                )
+                Spacer(modifier = Modifier.width(12.dp))
                 Column {
                     Text(
                         text = taskItem.task,
@@ -1167,7 +1223,6 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel, navController: Nav
                         )
                         Row {
                             if (taskItem.category?.isNotEmpty() == true) {
-                                // Define the category properties
                                 val (categoryIcon, categoryColor) = when (taskItem.category) {
                                     "Grocery" -> Pair(
                                         painterResource(id = R.drawable.grocery),
@@ -1224,8 +1279,6 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel, navController: Nav
                                         Color.Gray
                                     )
                                 }
-
-                                // Display the category with its icon and background color
                                 Row(
                                     modifier = Modifier
                                         .height(29.dp)

@@ -59,7 +59,15 @@ class TaskViewModel(application: Application, private val repository: TaskReposi
             repository.deleteTask(taskItem)
         }
     }
+
+    fun markTaskAsCompleted(taskItem: TaskItem, isCompleted: Boolean) {
+        val updatedTask = taskItem.copy(completed = isCompleted)
+        viewModelScope.launch {
+            repository.insertTask(updatedTask)
+        }
+    }
 }
+
 class TaskViewModelFactory(
     private val application: Application,
     private val repository: TaskRepository
