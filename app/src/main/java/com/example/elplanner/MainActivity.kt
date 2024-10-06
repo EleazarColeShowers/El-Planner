@@ -47,6 +47,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -460,7 +461,8 @@ fun CreateAccountPage(auth: FirebaseAuth) {
                 focusedBorderColor = Color(0xFF8875FF),
                 unfocusedBorderColor = Color(0xFF8875FF)
             ),
-            textStyle = TextStyle(color = Color.White)
+            textStyle = TextStyle(color = Color.White),
+            visualTransformation = PasswordVisualTransformation()
         )
 
         Spacer(modifier = Modifier.height(80.dp))
@@ -562,7 +564,8 @@ fun LoginPage(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
                 focusedBorderColor = Color(0xFF8875FF),
                 unfocusedBorderColor = Color(0xFF8875FF)
             ),
-            textStyle = TextStyle(color = Color.White)
+            textStyle = TextStyle(color = Color.White),
+            visualTransformation = PasswordVisualTransformation()
         )
 
         Spacer(modifier = Modifier.height(80.dp))

@@ -28,6 +28,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -46,6 +47,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -56,6 +58,7 @@ import androidx.navigation.compose.rememberNavController
 import com.example.elplanner.data.TaskViewModel
 import com.example.elplanner.data.ViewModelProvider
 import com.example.elplanner.ui.theme.ElPlannerTheme
+import com.google.firebase.auth.EmailAuthProvider
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
@@ -281,7 +284,10 @@ fun Accounts(){
     val passwordIcon= painterResource(id = R.drawable.changepassword)
     val nextIcon= painterResource(id = R.drawable.nexticon)
     var showDialog by remember { mutableStateOf(false) }
+    var showPasswordDialog by remember { mutableStateOf(false) }
     var newUsername by remember { mutableStateOf("") }
+    var oldPassword by remember { mutableStateOf("") }
+    var newPassword by remember { mutableStateOf("") }
 
     if (showDialog) {
         Dialog(onDismissRequest = { showDialog = false }) {
@@ -309,23 +315,22 @@ fun Accounts(){
                     )
 
                     Spacer(modifier = Modifier.height(8.dp))
-
-                    // TextField to input new username
-                    TextField(
+                    OutlinedTextField(
                         value = newUsername,
                         onValueChange = { newUsername = it },
                         placeholder = { Text("Enter new account name", color = Color.Gray) },
-                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.Black),
+                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.White),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
-                        colors = TextFieldDefaults.textFieldColors(
-                            cursorColor = Color.White,
-                            focusedIndicatorColor = Color.Transparent,
-                            unfocusedIndicatorColor = Color.Transparent
-                        )
-                    )
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            focusedLabelColor = Color.White,
+                            unfocusedLabelColor = Color.White,
+                            focusedBorderColor = Color(0xFF8875FF),
+                            unfocusedBorderColor = Color.White
+                        ),
 
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
                     TextButton(
                         onClick = {
@@ -344,7 +349,7 @@ fun Accounts(){
                                 Toast.makeText(context, "Please enter a valid username", Toast.LENGTH_SHORT).show()
                             }
                         },
-                        modifier = Modifier.align(Alignment.End) // Align button to the right
+                        modifier = Modifier.align(Alignment.End)
                     ) {
                         Text(text = "Update", color = Color.White)
                     }
@@ -352,6 +357,92 @@ fun Accounts(){
             }
         }
     }
+
+    if (showPasswordDialog) {
+        Dialog(onDismissRequest = { showPasswordDialog = false }) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .background(
+                        color = Color(0xFF363636),
+                        shape = RoundedCornerShape(16.dp)
+                    )
+                    .padding(16.dp)
+                    .height(311.dp)
+            ) {
+                Column(
+                    verticalArrangement = Arrangement.SpaceBetween,
+                    modifier = Modifier.fillMaxSize()
+                ) {
+                    Text(
+                        text = "Change Account Password",
+                        color = Color.White,
+                        style = androidx.compose.ui.text.TextStyle(
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = oldPassword,
+                        onValueChange = { oldPassword = it },
+                        placeholder = { Text("Enter old password", color = Color.Gray) },
+                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.White),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            focusedLabelColor = Color.White,
+                            unfocusedLabelColor = Color.White,
+                            focusedBorderColor = Color(0xFF8875FF),
+                            unfocusedBorderColor = Color.White
+                        ),
+                        visualTransformation = PasswordVisualTransformation() // For hiding password input
+                    )
+
+                    Spacer(modifier = Modifier.height(8.dp))
+                    OutlinedTextField(
+                        value = newPassword,
+                        onValueChange = { newPassword = it },
+                        placeholder = { Text("Enter new password", color = Color.Gray) },
+                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.White),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp),
+                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                            focusedLabelColor = Color.White,
+                            unfocusedLabelColor = Color.White,
+                            focusedBorderColor = Color(0xFF8875FF),
+                            unfocusedBorderColor = Color.White
+                        ),
+                        visualTransformation = PasswordVisualTransformation() // For hiding password input
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+                    TextButton(
+                        onClick = {
+                            changePassword(
+                                oldPassword = oldPassword,
+                                newPassword = newPassword,
+                                onSuccess = {
+                                    Toast.makeText(context, "Password updated successfully!", Toast.LENGTH_SHORT).show()
+                                    showPasswordDialog = false
+                                },
+                                onFailure = {
+                                    Toast.makeText(context, "Old password incorrect", Toast.LENGTH_SHORT).show()
+                                }
+                            )
+                        },
+                        modifier = Modifier.align(Alignment.End)
+                    ) {
+                        Text(text = "Update", color = Color.White)
+                    }
+                }
+            }
+        }
+    }
+
     Column(Modifier.fillMaxWidth()){
         Text(
             text = "Account",
@@ -388,7 +479,8 @@ fun Accounts(){
         Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .clickable { showPasswordDialog = true },
         ) {
             Image(
                 painter = passwordIcon,
@@ -520,5 +612,29 @@ fun updateUsername(newUsername: String, onSuccess: () -> Unit, onFailure: (Excep
             }
     } else {
         onFailure(Exception("User not authenticated"))
+    }
+}
+
+fun changePassword(
+    oldPassword: String,
+    newPassword: String,
+    onSuccess: () -> Unit,
+    onFailure: () -> Unit
+) {
+    val user = FirebaseAuth.getInstance().currentUser
+    val credential = EmailAuthProvider.getCredential(user?.email ?: "", oldPassword)
+
+    user?.reauthenticate(credential)?.addOnCompleteListener { task ->
+        if (task.isSuccessful) {
+            user.updatePassword(newPassword).addOnCompleteListener { updateTask ->
+                if (updateTask.isSuccessful) {
+                    onSuccess()
+                } else {
+                    onFailure()
+                }
+            }
+        } else {
+            onFailure()
+        }
     }
 }
