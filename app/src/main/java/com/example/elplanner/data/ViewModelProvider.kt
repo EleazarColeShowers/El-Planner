@@ -11,7 +11,8 @@ object ViewModelProvider {
             val application = context.applicationContext as Application
             val taskDao = TaskDatabase.getDatabase(application).taskDao()
             val repository = TaskRepository(taskDao)
-            taskViewModel = TaskViewModel(application, repository)
+            val firebaseUserRepository= FirebaseUserRepository()
+            taskViewModel = TaskViewModel(application, repository, firebaseUserRepository)
         }
         return taskViewModel!!
     }

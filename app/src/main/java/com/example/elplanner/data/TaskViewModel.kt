@@ -17,7 +17,11 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 
-class TaskViewModel(application: Application, private val repository: TaskRepository) : AndroidViewModel(application) {
+class TaskViewModel(
+    application: Application,
+    private val repository: TaskRepository,
+    private val firebaseUserRepository: FirebaseUserRepository
+) : AndroidViewModel(application) {
     private val taskDao: TaskDao = TaskDatabase.getDatabase(application).taskDao()
 
     var task by mutableStateOf("")
@@ -26,13 +30,26 @@ class TaskViewModel(application: Application, private val repository: TaskReposi
 
     val taskList = MutableStateFlow<List<TaskItem>>(emptyList())
 
+//    fun loadUserTasks(userId: String) {
+//        viewModelScope.launch {
+//            repository.getUserTasks(userId).collect { tasks ->
+//                taskList.value = tasks
+//            }
+//        }
+//    }
+
     fun loadUserTasks(userId: String) {
-        viewModelScope.launch {
-            repository.getUserTasks(userId).collect { tasks ->
-                taskList.value = tasks
+        val userId = firebaseUserRepository.getCurrentUserId()
+        if (userId != null) {
+            viewModelScope.launch {
+                repository.getUserTasks(userId).collect { tasks ->
+                    taskList.value = tasks
+                }
             }
         }
     }
+
+
     fun addTask(task: String, description: String, date: String, time: String, priorityFlag: Int?, category: String?, userId: String) {
         viewModelScope.launch {
             val taskEntity = TaskItem(
@@ -70,12 +87,12 @@ class TaskViewModel(application: Application, private val repository: TaskReposi
 
 class TaskViewModelFactory(
     private val application: Application,
-    private val repository: TaskRepository
+    private val taskRepository: TaskRepository,
+    private val firebaseUserRepository: FirebaseUserRepository
 ) : ViewModelProvider.Factory {
-    @Suppress("UNCHECKED_CAST")
     override fun <T : ViewModel> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(TaskViewModel::class.java)) {
-            return TaskViewModel(application, repository) as T // Pass application here
+            return TaskViewModel(application, taskRepository, firebaseUserRepository) as T
         }
         throw IllegalArgumentException("Unknown ViewModel class")
     }

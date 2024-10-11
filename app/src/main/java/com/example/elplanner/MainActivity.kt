@@ -171,81 +171,92 @@ fun Carousel(
     contentPadding: PaddingValues = PaddingValues(horizontal = 16.dp),
     navController: NavController
 ) {
-    //TODO 1: Fix height change between CarouselItem 1 and 2,3
     val pagerState = rememberPagerState()
 
+    // Use a Column to stack carousel content and the button
     Column(
-        verticalArrangement = Arrangement.spacedBy(itemSpacing),
-        modifier = modifier.padding(top = 14.dp)
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(top = 14.dp),
+        verticalArrangement = Arrangement.SpaceBetween  // Space out elements between top and bottom
     ) {
-        HorizontalPager(
-            count = items.size,
-            state = pagerState,
-            contentPadding = contentPadding,
+        // Carousel content at the top
+        Column(
+            verticalArrangement = Arrangement.spacedBy(itemSpacing),
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(top = 84.dp)
-
-        ) { page ->
-            val item = items[page]
-            Column(
-                modifier = Modifier.fillMaxWidth(0.9f),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Image(
+        ) {
+            HorizontalPager(
+                count = items.size,
+                state = pagerState,
+                contentPadding = contentPadding,
+                modifier = Modifier.fillMaxWidth()
+            ) { page ->
+                val item = items[page]
+                Column(
                     modifier = Modifier
-                        .height(250.dp)
-                        .fillMaxWidth(),
-                    painter = painterResource(id = item.imageResId),
-                    contentDescription = item.contentDescriptionResId?.let { stringResource(it) },
-                    contentScale = ContentScale.Crop
-                )
-                Spacer(modifier = Modifier.height(100.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
+                        .fillMaxWidth(0.9f)
+                        .height(500.dp),  // Set a fixed height for carousel content
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    repeat(3) {index->
-                        Box(
-                            modifier = Modifier
-                                .width(20.dp)
-                                .height(4.dp)
-                                .background(
-                                    color = if (pagerState.currentPage == index) Color.White else Color.Gray,
-                                    shape = RoundedCornerShape(2.dp)
-                                )
-                                .padding(horizontal = 4.dp)
-                        )
+                    Image(
+                        modifier = Modifier
+                            .height(250.dp)
+                            .fillMaxWidth(),
+                        painter = painterResource(id = item.imageResId),
+                        contentDescription = item.contentDescriptionResId?.let { stringResource(it) },
+                        contentScale = ContentScale.Crop
+                    )
+                    Spacer(modifier = Modifier.height(40.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        repeat(3) { index ->
+                            Box(
+                                modifier = Modifier
+                                    .width(20.dp)
+                                    .height(4.dp)
+                                    .background(
+                                        color = if (pagerState.currentPage == index) Color.White else Color.Gray,
+                                        shape = RoundedCornerShape(2.dp)
+                                    )
+                                    .padding(horizontal = 4.dp)
+                            )
+                        }
                     }
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Text(
+                        text = item.title,
+                        style = TextStyle(
+                            color = Color.White,
+                            fontSize = 25.sp,
+                            fontWeight = FontWeight.Bold
+                        ),
+                        modifier = Modifier.fillMaxWidth(0.85f),
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(36.dp))
+                    Text(
+                        text = item.message,
+                        style = TextStyle(
+                            color = Color.White,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Light
+                        ),
+                        modifier = Modifier.fillMaxWidth(0.85f),
+                        textAlign = TextAlign.Center
+                    )
                 }
-                Text(
-                    text = item.title,
-                    style = TextStyle(
-                        color = Color.White,
-                        fontSize = 32.sp,
-                        fontWeight = FontWeight.Bold
-                    ),
-                    modifier = Modifier.fillMaxWidth(0.85f),
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(42.dp))
-                Text(
-                    text = item.message,
-                    style = TextStyle(
-                        color = Color.White,
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Light
-                    ),
-                    modifier = Modifier.fillMaxWidth(0.85f),
-                    textAlign = TextAlign.Center
-                )
-
             }
-
         }
-        Spacer(modifier = Modifier.height(107.dp))
+
+        // Button at the bottom
         Box(
-            modifier = Modifier.fillMaxWidth(),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 150.dp),  // Optional bottom padding
             contentAlignment = Alignment.Center
         ) {
             Column(
@@ -271,7 +282,6 @@ fun Carousel(
         }
     }
 }
-
 
 @Composable
 fun WelcomePage(navController: NavController) {

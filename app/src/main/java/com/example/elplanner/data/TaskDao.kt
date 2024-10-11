@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface TaskDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertTask(task: TaskItem)
+    suspend fun insertTask(task: com.example.elplanner.data.TaskItem)
 
     // Filter tasks by userId
     @Query("SELECT * FROM tasks WHERE userId = :userId")

@@ -186,7 +186,7 @@ fun HomePage(auth: FirebaseAuth) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 14.dp)
+            .padding(top = 24.dp)
     ) {
         Row(
             modifier = Modifier
@@ -315,11 +315,9 @@ fun EmptyPage(){
 @Composable
 fun BottomBar(navController: NavController) {
     val context = LocalContext.current
-    val items = listOf("Index", "Calendar", "Focus", "Profile")
+    val items = listOf("Index", "Profile")
     val icons = mapOf(
         "Index" to R.drawable.indexicon,
-        "Calendar" to R.drawable.calendaricon,
-        "Focus" to R.drawable.focusicon,
         "Profile" to R.drawable.profileicon
     )
 
