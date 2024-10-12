@@ -9,16 +9,20 @@ class FirebaseUserRepository {
     private val firebaseAuth: FirebaseAuth = FirebaseAuth.getInstance()
     private val database: DatabaseReference = Firebase.database.reference
 
-    fun createUser(username: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
-        val currentUser = firebaseAuth.currentUser
-        if (currentUser != null) {
-            database.child("users").child(currentUser.uid)
-                .setValue(username)
-                .addOnSuccessListener { onSuccess() }
-                .addOnFailureListener { onFailure(it) }
-        }
-    }
+    fun syncTaskToFirebase(taskItem: TaskItem, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
+        val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val taskId = taskItem.id.toString()  // Use the task ID as the Firebase node key
 
+        // Upload the TaskItem as a JSON-like object
+        database.child("users").child(userId).child("tasks").child(taskId)
+            .setValue(taskItem)
+            .addOnSuccessListener {
+                onSuccess()
+            }
+            .addOnFailureListener { exception ->
+                onFailure(exception)
+            }
+    }
     fun getCurrentUserId(): String? {
         return firebaseAuth.currentUser?.uid
     }

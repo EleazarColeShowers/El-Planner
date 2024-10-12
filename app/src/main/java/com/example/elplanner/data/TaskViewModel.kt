@@ -37,13 +37,29 @@ class TaskViewModel(
 //            }
 //        }
 //    }
+//val userId = firebaseUserRepository.getCurrentUserId()
 
     fun loadUserTasks(userId: String) {
-        val userId = firebaseUserRepository.getCurrentUserId()
-        if (userId != null) {
-            viewModelScope.launch {
-                repository.getUserTasks(userId).collect { tasks ->
-                    taskList.value = tasks
+        viewModelScope.launch {
+            repository.getUserTasks(userId).collect { tasks ->
+                taskList.value = tasks
+            }
+        }
+    }
+
+    fun syncRoomTasksToFirebase() {
+        viewModelScope.launch {
+            val userId = firebaseUserRepository.getCurrentUserId()
+            if (userId != null) {
+                // Fetch tasks from Room
+                repository.getUserTasks(userId).collect { taskList ->
+                    taskList.forEach { taskItem ->
+                        firebaseUserRepository.syncTaskToFirebase(taskItem, {
+                            Log.d("FirebaseSync", "Task ${taskItem.id} synced successfully")
+                        }, { exception ->
+                            Log.e("FirebaseSync", "Error syncing task ${taskItem.id}", exception)
+                        })
+                    }
                 }
             }
         }
