@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -138,15 +139,30 @@ fun Header() {
         LaunchedEffect(userId) {
             databaseRef.addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    val fetchedUsername = snapshot.getValue(String::class.java) ?: "User"
-                    username = fetchedUsername
-                    with(sharedPreferences.edit()) {
-                        putString("username", fetchedUsername)
-                        apply()
+                    // Check if the value is a String (username) or a Map (tasks, etc.)
+                    if (snapshot.value is String) {
+                        // If the value is a String, this is the username
+                        val fetchedUsername = snapshot.getValue(String::class.java)
+                        if (fetchedUsername != null) {
+                            username = fetchedUsername
+
+                            // Save username in shared preferences
+                            with(sharedPreferences.edit()) {
+                                putString("username", fetchedUsername)
+                                apply()
+                            }
+                        } else {
+                            username = "User"
+                        }
+                    } else if (snapshot.value is Map<*, *>) {
+                        // If the value is a Map, handle it accordingly
+                        // This user doesn't have a simple username field
+                        username = "User"
                     }
                 }
 
                 override fun onCancelled(error: DatabaseError) {
+                    Log.e("FirebaseError", "Failed to fetch username: ${error.message}")
                     username = "Error"
                 }
             })

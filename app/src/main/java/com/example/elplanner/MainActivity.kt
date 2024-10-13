@@ -94,7 +94,7 @@ class MainActivity : ComponentActivity() {
 
                         val navController = rememberNavController()
                         NavHost(navController = navController, startDestination = if (navigateTo == "Carousel") "Carousel" else "splash") {
-                            composable("splash") { SplashPage(navController, auth)}
+                            composable("splash") { SplashPage(navController, auth, taskViewModel)}
                             composable("Carousel") { Carousel(navController= navController) }
                             composable("Welcome"){ WelcomePage(navController)}
                             composable("CreateAccount"){ CreateAccountPage(auth)}
@@ -109,7 +109,7 @@ class MainActivity : ComponentActivity() {
 
 
 @Composable
-fun SplashPage(navController: NavController, auth: FirebaseAuth) {
+fun SplashPage(navController: NavController, auth: FirebaseAuth, taskViewModel: TaskViewModel) {
     val splashIcon = painterResource(id = R.drawable.splashicon)
     val context = LocalContext.current
 
@@ -135,6 +135,7 @@ fun SplashPage(navController: NavController, auth: FirebaseAuth) {
     }
 
     LaunchedEffect(Unit) {
+        taskViewModel.syncRoomTasksToFirebase()
         delay(1500)
         val currentUser = auth.currentUser
         if (currentUser != null) {

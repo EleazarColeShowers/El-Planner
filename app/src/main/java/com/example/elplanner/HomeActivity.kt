@@ -407,9 +407,12 @@ fun AddTask(navController: NavController, taskViewModel: TaskViewModel) {
     ) {
         Column(
             modifier = Modifier
-                .fillMaxWidth()
+                .fillMaxWidth(0.9f)
                 .height(250.dp)
-                .background(Color(0xFF363636))
+                .background(
+                    Color(0xFF363636),
+                    shape = RoundedCornerShape(16.dp)
+                )
                 .padding(10.dp),
             verticalArrangement = Arrangement.Center
         ) {
@@ -507,7 +510,11 @@ fun DateTime(navController: NavController, taskViewModel: TaskViewModel) {
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .height(450.dp)
-                .background(Color(0xFF363636))
+                .background(
+                    Color(0xFF363636),
+                    shape = RoundedCornerShape(16.dp)
+
+                )
                 .padding(10.dp),
             verticalArrangement = Arrangement.Center
         ) {
@@ -695,7 +702,10 @@ fun TimeView(navController: NavController, taskViewModel: TaskViewModel) {
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .height(250.dp)
-                .background(Color(0xFF363636))
+                .background(
+                    Color(0xFF363636),
+                    shape = RoundedCornerShape(16.dp)
+                )
                 .padding(10.dp),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
@@ -1065,14 +1075,6 @@ fun TaskPage(navController: NavController, taskViewModel: TaskViewModel, searchQ
                 Spacer(modifier = Modifier.height(16.dp))
             }
         }
-        Button(
-            onClick = {
-                taskViewModel.syncRoomTasksToFirebase()
-            },
-            modifier = Modifier.padding(16.dp)
-        ) {
-            Text(text = "Sync Tasks to Firebase")
-        }
     }
 }
 
@@ -1302,9 +1304,9 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel, navController: Nav
                                     Spacer(modifier = Modifier.width(8.dp))
                                     Text(
                                         text = taskItem.category ?: "",
-                                        color = Color.White,
+                                        color = Color.Black,
                                         style = TextStyle(
-                                            fontSize = 14.sp,
+                                            fontSize = 12.sp,
                                             fontWeight = FontWeight.Medium
                                         )
                                     )
