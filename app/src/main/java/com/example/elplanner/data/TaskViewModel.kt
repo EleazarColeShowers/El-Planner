@@ -9,6 +9,11 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.google.android.gms.tasks.Task
+import com.google.firebase.database.DataSnapshot
+import com.google.firebase.database.DatabaseError
+import com.google.firebase.database.FirebaseDatabase
+import com.google.firebase.database.ValueEventListener
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -41,9 +46,28 @@ class TaskViewModel(
 
     fun loadUserTasks(userId: String) {
         viewModelScope.launch {
+            // First, fetch tasks from the Room database
             repository.getUserTasks(userId).collect { tasks ->
                 taskList.value = tasks
             }
+
+            // Then, fetch tasks from Firebase Realtime Database
+            val databaseRef = FirebaseDatabase.getInstance().getReference("users/$userId/tasks")
+            databaseRef.addValueEventListener(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    val firebaseTaskList = mutableListOf<TaskItem>()
+                    for (taskSnapshot in snapshot.children) {
+                        val task = taskSnapshot.getValue(TaskItem::class.java)
+                        task?.let { firebaseTaskList.add(it) }
+                    }
+                    // Combine Room tasks with Firebase tasks and update the task list
+                    taskList.value += firebaseTaskList
+                }
+
+                override fun onCancelled(error: DatabaseError) {
+                    Log.e("FirebaseError", "Failed to load tasks from Firebase: ${error.message}")
+                }
+            })
         }
     }
 

@@ -132,32 +132,24 @@ fun Header() {
     var username by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
-
     if (currentUser != null) {
         val userId = currentUser.uid
         val databaseRef = FirebaseDatabase.getInstance().getReference("users/$userId")
         LaunchedEffect(userId) {
-            databaseRef.addValueEventListener(object : ValueEventListener {
+            databaseRef.addListenerForSingleValueEvent(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {
-                    // Check if the value is a String (username) or a Map (tasks, etc.)
-                    if (snapshot.value is String) {
-                        // If the value is a String, this is the username
-                        val fetchedUsername = snapshot.getValue(String::class.java)
-                        if (fetchedUsername != null) {
-                            username = fetchedUsername
-
-                            // Save username in shared preferences
+                    if (snapshot.exists()) {
+                        val snapshotValue = snapshot.value
+                        if (snapshotValue is String) {
+                            username = snapshotValue
                             with(sharedPreferences.edit()) {
-                                putString("username", fetchedUsername)
+                                putString("username", username)
                                 apply()
                             }
+                        } else if (snapshot.child("tasks").exists()) {
                         } else {
                             username = "User"
                         }
-                    } else if (snapshot.value is Map<*, *>) {
-                        // If the value is a Map, handle it accordingly
-                        // This user doesn't have a simple username field
-                        username = "User"
                     }
                 }
 
@@ -204,7 +196,6 @@ fun Header() {
     }
 }
 
-// TODO: add two buttons for complete and incomplete tasks"
 @Composable
 fun TaskProgress(taskViewModel: TaskViewModel){
     val taskList by taskViewModel.taskList.collectAsState()

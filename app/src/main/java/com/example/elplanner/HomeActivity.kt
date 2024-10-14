@@ -1197,7 +1197,6 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel, navController: Nav
                     .clickable { showDescriptionDialog = true },
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                //TODO: add a clickable for each task that opens a dialog with the task description
                 //TODO: inspect and make changes to code as the ui isn't smooth yet
                 Box(
                     modifier = Modifier
