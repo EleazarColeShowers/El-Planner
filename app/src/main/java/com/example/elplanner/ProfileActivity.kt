@@ -245,6 +245,7 @@ fun TaskProgress(taskViewModel: TaskViewModel){
 
 @Composable
 fun Settings(){
+    val context= LocalContext.current
     val settingsIcon= painterResource(id = R.drawable.seetingsicon)
     val nextIcon= painterResource(id = R.drawable.nexticon)
     Column(Modifier.fillMaxWidth()){
@@ -257,7 +258,12 @@ fun Settings(){
         Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .clickable {
+                    val intent= Intent(context, AppSetting::class.java)
+                    context.startActivity(intent)
+
+                },
         ) {
             Image(
                 painter = settingsIcon,
@@ -529,7 +535,12 @@ fun ElAbout(auth: FirebaseAuth){
         Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .clickable {
+                    val intent= Intent(context, AboutUs::class.java)
+                    context.startActivity(intent)
+
+                },
         ) {
             Image(
                 painter = aboutIcon,
@@ -553,7 +564,11 @@ fun ElAbout(auth: FirebaseAuth){
         Spacer(modifier = Modifier.height(16.dp))
         Row(
             modifier = Modifier
-                .fillMaxWidth(),
+                .fillMaxWidth()
+                .clickable {
+                    val intent= Intent(context, FAQActivity::class.java)
+                    context.startActivity(intent)
+                },
         ) {
             Image(
                 painter = faqIcon,
