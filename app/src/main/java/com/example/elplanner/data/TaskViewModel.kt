@@ -35,15 +35,6 @@ class TaskViewModel(
 
     val taskList = MutableStateFlow<List<TaskItem>>(emptyList())
 
-//    fun loadUserTasks(userId: String) {
-//        viewModelScope.launch {
-//            repository.getUserTasks(userId).collect { tasks ->
-//                taskList.value = tasks
-//            }
-//        }
-//    }
-//val userId = firebaseUserRepository.getCurrentUserId()
-
     fun loadUserTasks(userId: String) {
         viewModelScope.launch {
             // First, fetch tasks from the Room database
@@ -60,8 +51,8 @@ class TaskViewModel(
                         val task = taskSnapshot.getValue(TaskItem::class.java)
                         task?.let { firebaseTaskList.add(it) }
                     }
-                    // Combine Room tasks with Firebase tasks and update the task list
-                    taskList.value += firebaseTaskList
+                    Log.d("FirebaseData", "Total tasks fetched: ${firebaseTaskList.size}")
+                    taskList.value = firebaseTaskList
                 }
 
                 override fun onCancelled(error: DatabaseError) {
@@ -125,15 +116,15 @@ class TaskViewModel(
     }
 }
 
-class TaskViewModelFactory(
-    private val application: Application,
-    private val taskRepository: TaskRepository,
-    private val firebaseUserRepository: FirebaseUserRepository
-) : ViewModelProvider.Factory {
-    override fun <T : ViewModel> create(modelClass: Class<T>): T {
-        if (modelClass.isAssignableFrom(TaskViewModel::class.java)) {
-            return TaskViewModel(application, taskRepository, firebaseUserRepository) as T
-        }
-        throw IllegalArgumentException("Unknown ViewModel class")
-    }
-}
+//class TaskViewModelFactory(
+//    private val application: Application,
+//    private val taskRepository: TaskRepository,
+//    private val firebaseUserRepository: FirebaseUserRepository
+//) : ViewModelProvider.Factory {
+//    override fun <T : ViewModel> create(modelClass: Class<T>): T {
+//        if (modelClass.isAssignableFrom(TaskViewModel::class.java)) {
+//            return TaskViewModel(application, taskRepository, firebaseUserRepository) as T
+//        }
+//        throw IllegalArgumentException("Unknown ViewModel class")
+//    }
+//}

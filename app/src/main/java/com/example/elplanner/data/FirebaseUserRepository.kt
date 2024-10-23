@@ -11,7 +11,7 @@ class FirebaseUserRepository {
 
     fun syncTaskToFirebase(taskItem: TaskItem, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
         val userId = FirebaseAuth.getInstance().currentUser?.uid ?: return
-        val taskId = taskItem.id.toString()  // Use the task ID as the Firebase node key
+        val taskId = taskItem.id.toString()
 //TODO: RE-STRUCTURE REALTIME DATABASE
         database.child("users").child(userId).child("tasks").child(taskId)
             .setValue(taskItem)
