@@ -138,7 +138,7 @@ fun SplashPage(navController: NavController, auth: FirebaseAuth, taskViewModel: 
         taskViewModel.syncRoomTasksToFirebase()
         delay(1500)
         val currentUser = auth.currentUser
-        if(currentUser != null && !currentUser.isAnonymous && currentUser.email != null){
+        if(currentUser != null && currentUser.email != null){
             val intent = Intent(context, HomeActivity::class.java).apply {
                 putExtra("navigate_to", "TaskPage")
             }
