@@ -34,3 +34,25 @@ Future Enhancements
 Push Notifications: Reminders for upcoming tasks.
 Task Search and Filter: Easily find tasks based on keywords or categories.
 Calendar View: Visualize tasks within a calendar for better planning.
+![Screenshot 2024-11-09 223558](https://github.com/user-attachments/assets/bfd2a685-f55b-4b77-bee0-977d75513fe2)
+![Screenshot 2024-11-09 223624](https://github.com/user-attachments/assets/257e54b5-ceef-412c-9f9e-ac72dc821397)
+![Screenshot 2024-11-09 223631](https://github.com/user-attachments/assets/7241d092-3f95-4acb-91e3-33b6d01de657)
+![Screenshot 2024-11-09 223631](https://github.com/user-attachments/assets/8ca5d70a-5b43-4920-ba06-659027b091b7)
+![Screenshot 2024-11-09 223636](https://github.com/user-attachments/assets/93afba01-8dcd-42d8-903c-c74ffe0f39a7)
+![Screenshot 2024-11-09 223643](https://github.com/user-attachments/assets/9adf1aa8-b383-4c8f-92a4-3ce4d9434e5f)
+![Screenshot 2024-11-09 223650](https://github.com/user-attachments/assets/af707a3a-f74c-4447-bb23-3352483fff54)
+![Screenshot 2024-11-09 223656](https://github.com/user-attachments/assets/d41c3160-cc90-4e90-ad9c-39055a3f8007)
+![Screenshot 2024-11-09 223708](https://github.com/user-attachments/assets/9083f2e5-c0b8-472a-8c31-35b1932b4cbd)
+
+
+
+
+
+
+
+
+
+
+
+
+
