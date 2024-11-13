@@ -1,8 +1,8 @@
 
-El Planner
+# El Planner
 El Planner is a powerful To-Do List application designed to help users prioritize, categorize, and keep track of their tasks with ease. With a simple, intuitive flow, El Planner ensures users stay organized and productive, whether managing tasks for work, school, or personal projects.
 
-Features
+## Features
 1. User Authentication
 Create an Account: Users can sign up with a unique username, email, and password.
 Login: Existing users can log in using their email and password.
