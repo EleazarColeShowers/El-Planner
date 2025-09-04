@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
@@ -56,6 +57,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -148,8 +150,8 @@ fun Index(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
         Column(
             modifier = Modifier.weight(1f)
         ) {
-            val navigateTo = (LocalContext.current as Activity).intent.getStringExtra("navigate_to")
-
+            val activity = LocalActivity.current
+            val navigateTo = activity?.intent?.getStringExtra("navigate_to")
             HomePage(auth)
             SearchBar(
                 hint = "Search books...",
@@ -432,12 +434,13 @@ fun AddTask(navController: NavController, taskViewModel: TaskViewModel) {
                 label = { Text("Task") },
                 modifier = Modifier
                     .fillMaxWidth(0.9f),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
+                colors = OutlinedTextFieldDefaults.colors(
                     focusedLabelColor = Color.White,
                     unfocusedLabelColor = Color.White,
                     focusedBorderColor = Color(0xFF8875FF),
                     unfocusedBorderColor = Color.White
-                ),
+                )
+                ,
                 textStyle = TextStyle(
                     color = Color.White,
                 ),
@@ -450,7 +453,7 @@ fun AddTask(navController: NavController, taskViewModel: TaskViewModel) {
                 label = { Text("Description (Optional)") },
                 modifier = Modifier
                     .fillMaxWidth(0.9f),
-                colors = TextFieldDefaults.outlinedTextFieldColors(
+                colors = OutlinedTextFieldDefaults.colors(
                     focusedLabelColor = Color.White,
                     unfocusedLabelColor = Color.White,
                     focusedBorderColor = Color(0xFF8875FF),

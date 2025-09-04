@@ -29,6 +29,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
@@ -430,7 +431,7 @@ fun CreateAccountPage(auth: FirebaseAuth) {
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .align(Alignment.CenterHorizontally),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
+            colors = OutlinedTextFieldDefaults.colors(
                 focusedLabelColor = Color.White,
                 unfocusedLabelColor = Color.White,
                 focusedBorderColor = Color(0xFF8875FF),
@@ -448,7 +449,7 @@ fun CreateAccountPage(auth: FirebaseAuth) {
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .align(Alignment.CenterHorizontally),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
+            colors = OutlinedTextFieldDefaults.colors(
                 focusedLabelColor = Color.White,
                 unfocusedLabelColor = Color.White,
                 focusedBorderColor = Color(0xFF8875FF),
@@ -466,7 +467,7 @@ fun CreateAccountPage(auth: FirebaseAuth) {
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .align(Alignment.CenterHorizontally),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
+            colors = OutlinedTextFieldDefaults.colors(
                 focusedLabelColor = Color.White,
                 unfocusedLabelColor = Color.White,
                 focusedBorderColor = Color(0xFF8875FF),
@@ -551,7 +552,7 @@ fun LoginPage(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .align(Alignment.CenterHorizontally),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
+            colors = OutlinedTextFieldDefaults.colors(
                 focusedLabelColor = Color.White,
                 unfocusedLabelColor = Color.White,
                 focusedBorderColor = Color(0xFF8875FF),
@@ -569,7 +570,7 @@ fun LoginPage(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
             modifier = Modifier
                 .fillMaxWidth(0.9f)
                 .align(Alignment.CenterHorizontally),
-            colors = TextFieldDefaults.outlinedTextFieldColors(
+            colors = OutlinedTextFieldDefaults.colors(
                 focusedLabelColor = Color.White,
                 unfocusedLabelColor = Color.White,
                 focusedBorderColor = Color(0xFF8875FF),

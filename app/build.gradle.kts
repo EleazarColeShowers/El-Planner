@@ -2,18 +2,19 @@ plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.jetbrains.kotlin.android)
     alias(libs.plugins.google.gms.google.services)
-    id("kotlin-kapt") // Ensure KAPT is applied
+    id("kotlin-kapt")
+    id("org.jetbrains.kotlin.plugin.compose")
 
 }
 
 android {
     namespace = "com.example.elplanner"
-    compileSdk = 34
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.elplanner"
         minSdk = 24
-        targetSdk = 34
+        targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 

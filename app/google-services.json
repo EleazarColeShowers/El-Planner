@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "652103685217",
+    "firebase_url": "https://el-planner-default-rtdb.firebaseio.com",
+    "project_id": "el-planner",
+    "storage_bucket": "el-planner.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:652103685217:android:553a2b25bdf7ce18524620",
+        "android_client_info": {
+          "package_name": "com.example.elplanner"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAL5SMe5tCT1FAbDHxyiD8XPfm7Ot0WKtI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

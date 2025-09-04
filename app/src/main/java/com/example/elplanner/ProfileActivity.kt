@@ -30,6 +30,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -336,7 +337,7 @@ fun Accounts(){
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
-                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                        colors = OutlinedTextFieldDefaults.colors(
                             focusedLabelColor = Color.White,
                             unfocusedLabelColor = Color.White,
                             focusedBorderColor = Color(0xFF8875FF),
@@ -405,7 +406,7 @@ fun Accounts(){
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
-                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                        colors = OutlinedTextFieldDefaults.colors(
                             focusedLabelColor = Color.White,
                             unfocusedLabelColor = Color.White,
                             focusedBorderColor = Color(0xFF8875FF),
@@ -423,7 +424,7 @@ fun Accounts(){
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp),
-                        colors = TextFieldDefaults.outlinedTextFieldColors(
+                        colors = OutlinedTextFieldDefaults.colors(
                             focusedLabelColor = Color.White,
                             unfocusedLabelColor = Color.White,
                             focusedBorderColor = Color(0xFF8875FF),
