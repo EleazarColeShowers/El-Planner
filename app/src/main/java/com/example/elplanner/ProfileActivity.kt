@@ -1,6 +1,5 @@
 package com.example.elplanner
 
-import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -11,49 +10,38 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material.BottomNavigation
+import androidx.compose.material.BottomNavigationItem
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -66,12 +54,11 @@ import com.google.firebase.database.DataSnapshot
 import com.google.firebase.database.DatabaseError
 import com.google.firebase.database.FirebaseDatabase
 import com.google.firebase.database.ValueEventListener
-import java.time.format.TextStyle
+import kotlinx.coroutines.delay
 
-class ProfileActivity: ComponentActivity() {
+class ProfileActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var taskViewModel: TaskViewModel
-
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -84,17 +71,22 @@ class ProfileActivity: ComponentActivity() {
             ElPlannerTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = Color.Black
+                    color = Color(0xFF121212)
                 ) {
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    colors = listOf(
+                                        Color(0xFF1A1A2E),
+                                        Color(0xFF16213E),
+                                        Color(0xFF0F3460)
+                                    )
+                                )
+                            )
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            ProfilePage(auth, taskViewModel)
-                        }
+                        ProfilePage(auth, taskViewModel)
                     }
                 }
             }
@@ -104,25 +96,39 @@ class ProfileActivity: ComponentActivity() {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun ProfilePage(auth: FirebaseAuth,taskViewModel: TaskViewModel){
+fun ProfilePage(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
     val navController = rememberNavController()
+    var visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        visible = true
+    }
+
     Column(
         modifier = Modifier.fillMaxSize()
     ) {
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .padding(horizontal = 10.dp)
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn() + slideInVertically(initialOffsetY = { -40 }),
+            modifier = Modifier.weight(1f)
         ) {
-            Header()
-            Spacer(modifier = Modifier.height(25.dp))
-            TaskProgress(taskViewModel)
-            Spacer(modifier = Modifier.height(32.dp))
-            Settings()
-            Accounts()
-            ElAbout(auth)
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 24.dp)
+            ) {
+                Header()
+                Spacer(modifier = Modifier.height(32.dp))
+                TaskProgress(taskViewModel)
+                Spacer(modifier = Modifier.height(40.dp))
+                Settings()
+                Spacer(modifier = Modifier.height(24.dp))
+                Accounts()
+                Spacer(modifier = Modifier.height(24.dp))
+                ElAbout(auth)
+            }
         }
-        BottomBar(navController)
+        EnhancedBottomBar(navController)
     }
 }
 
@@ -133,6 +139,12 @@ fun Header() {
     var username by remember { mutableStateOf<String?>(null) }
     val context = LocalContext.current
     val sharedPreferences = context.getSharedPreferences("user_prefs", Context.MODE_PRIVATE)
+    var visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        visible = true
+    }
+
     if (currentUser != null) {
         val userId = currentUser.uid
         val databaseRef = FirebaseDatabase.getInstance().getReference("users/$userId")
@@ -147,7 +159,6 @@ fun Header() {
                                 putString("username", username)
                                 apply()
                             }
-                        } else if (snapshot.child("tasks").exists()) {
                         } else {
                             username = "User"
                         }
@@ -161,464 +172,825 @@ fun Header() {
             })
         }
     }
+
     if (username == null) {
         username = sharedPreferences.getString("username", "Loading...")
     }
 
-    Column(Modifier.fillMaxWidth(0.9f)) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 13.dp),
-            horizontalArrangement = Arrangement.Center
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(top = 32.dp)
+    ) {
+        // Profile title
+        Text(
+            text = "Profile",
+            color = Color.White,
+            fontSize = 24.sp,
+            fontWeight = FontWeight.Bold,
+            textAlign = TextAlign.Center,
+            letterSpacing = 0.5.sp,
+            modifier = Modifier.fillMaxWidth()
+        )
+
+        Spacer(modifier = Modifier.height(32.dp))
+
+        // Profile card
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn() + scaleIn()
         ) {
-            Text(
-                text = "Profile",
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Light,
-                textAlign = TextAlign.Center
-            )
-        }
-        Row(
-            modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .padding(top = 13.dp),
-            horizontalArrangement = Arrangement.Start
-        ) {
-            Text(
-                text = "Welcome ${username ?: "Loading..."}",
-                color = Color.White,
-                fontSize = 18.sp,
-                fontWeight = FontWeight.Medium,
-                textAlign = TextAlign.Start
-            )
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                color = Color(0xFF1E1E2E),
+                shadowElevation = 8.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(20.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Avatar
+                    Box(
+                        modifier = Modifier
+                            .size(64.dp)
+                            .background(
+                                Brush.linearGradient(
+                                    colors = listOf(Color(0xFF8875FF), Color(0xFFA890FF))
+                                ),
+                                shape = CircleShape
+                            ),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = username?.firstOrNull()?.uppercaseChar()?.toString() ?: "U",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 28.sp
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    // User info
+                    Column {
+                        Text(
+                            text = "Welcome back,",
+                            color = Color.White.copy(alpha = 0.6f),
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Normal
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = username ?: "Loading...",
+                            color = Color.White,
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = currentUser?.email ?: "",
+                            color = Color(0xFF8875FF),
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Normal
+                        )
+                    }
+                }
+            }
         }
     }
 }
 
 @Composable
-fun TaskProgress(taskViewModel: TaskViewModel){
+fun TaskProgress(taskViewModel: TaskViewModel) {
     val taskList by taskViewModel.taskList.collectAsState()
     val tasksLeft = taskList.count { !it.completed }
     val tasksDone = taskList.count { it.completed }
-    Row(
-        Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-        ){
-        Row(
-            Modifier
-                .width(154.dp)
-                .height(58.dp)
-                .background(Color(0xFF363636)),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ){
+    val totalTasks = taskList.size
+    val progress = if (totalTasks > 0) tasksDone.toFloat() / totalTasks else 0f
+
+    var visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        delay(200)
+        visible = true
+    }
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn() + expandVertically()
+    ) {
+        Column {
             Text(
-                text = "$tasksLeft tasks left",
-                style = androidx.compose.ui.text.TextStyle(
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.White
-                )
-            )
-        }
-        Row(
-            Modifier
-                .width(154.dp)
-                .height(58.dp)
-                .background(Color(0xFF363636)),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "$tasksDone tasks done",
-                style = androidx.compose.ui.text.TextStyle(
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = Color.White
-                )
+                text = "Task Progress",
+                color = Color.White.copy(alpha = 0.6f),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                letterSpacing = 0.5.sp
             )
 
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Progress cards
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                // Tasks Left Card
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0xFF1E1E2E),
+                    shadowElevation = 4.dp
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            tint = Color(0xFFFF9680),
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "$tasksLeft",
+                            style = TextStyle(
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Tasks Left",
+                            style = TextStyle(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = Color.White.copy(alpha = 0.6f)
+                            )
+                        )
+                    }
+                }
+
+                // Tasks Done Card
+                Surface(
+                    modifier = Modifier.weight(1f),
+                    shape = RoundedCornerShape(16.dp),
+                    color = Color(0xFF1E1E2E),
+                    shadowElevation = 4.dp
+                ) {
+                    Column(
+                        modifier = Modifier.padding(20.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Done,
+                            contentDescription = null,
+                            tint = Color(0xFF80FFA3),
+                            modifier = Modifier.size(32.dp)
+                        )
+                        Spacer(modifier = Modifier.height(12.dp))
+                        Text(
+                            text = "$tasksDone",
+                            style = TextStyle(
+                                fontSize = 28.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = Color.White
+                            )
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Completed",
+                            style = TextStyle(
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Normal,
+                                color = Color.White.copy(alpha = 0.6f)
+                            )
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Progress bar
+            Column(
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        text = "Overall Progress",
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 12.sp
+                    )
+                    Text(
+                        text = "${(progress * 100).toInt()}%",
+                        color = Color(0xFF8875FF),
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                val animatedProgress by animateFloatAsState(
+                    targetValue = progress,
+                    animationSpec = tween(durationMillis = 1000, easing = EaseOutCubic)
+                )
+
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(8.dp)
+                        .background(Color(0xFF2A2A3E), RoundedCornerShape(4.dp))
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth(animatedProgress)
+                            .fillMaxHeight()
+                            .background(
+                                Brush.horizontalGradient(
+                                    colors = listOf(Color(0xFF8875FF), Color(0xFFA890FF))
+                                ),
+                                RoundedCornerShape(4.dp)
+                            )
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
-fun Settings(){
-    val context= LocalContext.current
-    val settingsIcon= painterResource(id = R.drawable.seetingsicon)
-    val nextIcon= painterResource(id = R.drawable.nexticon)
-    Column(Modifier.fillMaxWidth()){
-        Text(
-            text = "Settings",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Light,
-            color= Color.Gray
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    val intent= Intent(context, AppSetting::class.java)
-                    context.startActivity(intent)
+fun Settings() {
+    val context = LocalContext.current
+    var visible by remember { mutableStateOf(false) }
 
-                },
-        ) {
-            Image(
-                painter = settingsIcon,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(10.dp))
+    LaunchedEffect(Unit) {
+        delay(300)
+        visible = true
+    }
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn() + slideInVertically(initialOffsetY = { 40 })
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "App Settings",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Light,
-                color = Color.White,
-                modifier = Modifier.weight(1f)
+                text = "Settings",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.White.copy(alpha = 0.6f),
+                letterSpacing = 0.5.sp
             )
-            Image(
-                painter = nextIcon,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SettingsItem(
+                icon = painterResource(id = R.drawable.seetingsicon),
+                title = "App Settings",
+                onClick = {
+                    val intent = Intent(context, AppSetting::class.java)
+                    context.startActivity(intent)
+                }
             )
         }
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Accounts(){
-    val context= LocalContext.current
-    val profileIcon= painterResource(id = R.drawable.profileicon)
-    val passwordIcon= painterResource(id = R.drawable.changepassword)
-    val nextIcon= painterResource(id = R.drawable.nexticon)
+fun Accounts() {
+    val context = LocalContext.current
     var showDialog by remember { mutableStateOf(false) }
     var showPasswordDialog by remember { mutableStateOf(false) }
     var newUsername by remember { mutableStateOf("") }
     var oldPassword by remember { mutableStateOf("") }
     var newPassword by remember { mutableStateOf("") }
+    var visible by remember { mutableStateOf(false) }
 
+    LaunchedEffect(Unit) {
+        delay(400)
+        visible = true
+    }
+
+    // Username Dialog
     if (showDialog) {
         Dialog(onDismissRequest = { showDialog = false }) {
-            Box(
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
-                    .height(225.dp)
-                    .background(
-                        color = Color(0xFF363636),
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                    .padding(16.dp)
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(24.dp),
+                color = Color(0xFF1E1E2E),
+                shadowElevation = 16.dp
             ) {
                 Column(
-                    verticalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.padding(24.dp)
                 ) {
                     Text(
                         text = "Change Account Name",
                         color = Color.White,
-                        style = androidx.compose.ui.text.TextStyle(
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
+                        style = TextStyle(
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
                         )
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
+
                     OutlinedTextField(
                         value = newUsername,
                         onValueChange = { newUsername = it },
                         placeholder = { Text("Enter new account name", color = Color.Gray) },
-                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.White),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedLabelColor = Color.White,
-                            unfocusedLabelColor = Color.White,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedLabelColor = Color(0xFF8875FF),
+                            unfocusedLabelColor = Color.White.copy(alpha = 0.6f),
                             focusedBorderColor = Color(0xFF8875FF),
-                            unfocusedBorderColor = Color.White
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                            cursorColor = Color(0xFF8875FF),
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent
                         ),
-
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    TextButton(
-                        onClick = {
-                            if (newUsername.isNotEmpty()) {
-                                updateUsername(
-                                    newUsername,
-                                    onSuccess = {
-                                        Toast.makeText(context, "Username updated!", Toast.LENGTH_SHORT).show()
-                                        showDialog = false
-                                    },
-                                    onFailure = {
-                                        Toast.makeText(context, "Failed to update username", Toast.LENGTH_SHORT).show()
-                                    }
-                                )
-                            } else {
-                                Toast.makeText(context, "Please enter a valid username", Toast.LENGTH_SHORT).show()
-                            }
-                        },
-                        modifier = Modifier.align(Alignment.End)
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = "Update", color = Color.White)
+                        EnhancedOutlinedButton(
+                            text = "Cancel",
+                            onClick = { showDialog = false },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        EnhancedGradientButton(
+                            text = "Update",
+                            onClick = {
+                                if (newUsername.isNotEmpty()) {
+                                    updateUsername(
+                                        newUsername,
+                                        onSuccess = {
+                                            Toast.makeText(context, "Username updated!", Toast.LENGTH_SHORT).show()
+                                            showDialog = false
+                                        },
+                                        onFailure = {
+                                            Toast.makeText(context, "Failed to update username", Toast.LENGTH_SHORT).show()
+                                        }
+                                    )
+                                } else {
+                                    Toast.makeText(context, "Please enter a valid username", Toast.LENGTH_SHORT).show()
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
             }
         }
     }
 
+    // Password Dialog
     if (showPasswordDialog) {
         Dialog(onDismissRequest = { showPasswordDialog = false }) {
-            Box(
+            Surface(
                 modifier = Modifier
                     .fillMaxWidth(0.9f)
-                    .background(
-                        color = Color(0xFF363636),
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                    .padding(16.dp)
-                    .height(311.dp)
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(24.dp),
+                color = Color(0xFF1E1E2E),
+                shadowElevation = 16.dp
             ) {
                 Column(
-                    verticalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxSize()
+                    modifier = Modifier.padding(24.dp)
                 ) {
                     Text(
-                        text = "Change Account Password",
+                        text = "Change Password",
                         color = Color.White,
-                        style = androidx.compose.ui.text.TextStyle(
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold
+                        style = TextStyle(
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
                         )
                     )
 
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(24.dp))
+
                     OutlinedTextField(
                         value = oldPassword,
                         onValueChange = { oldPassword = it },
-                        placeholder = { Text("Enter old password", color = Color.Gray) },
-                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.White),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
+                        placeholder = { Text("Current password", color = Color.Gray) },
+                        modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedLabelColor = Color.White,
-                            unfocusedLabelColor = Color.White,
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedLabelColor = Color(0xFF8875FF),
+                            unfocusedLabelColor = Color.White.copy(alpha = 0.6f),
                             focusedBorderColor = Color(0xFF8875FF),
-                            unfocusedBorderColor = Color.White
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                            cursorColor = Color(0xFF8875FF),
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent
                         ),
-                        visualTransformation = PasswordVisualTransformation() // For hiding password input
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = newPassword,
-                        onValueChange = { newPassword = it },
-                        placeholder = { Text("Enter new password", color = Color.Gray) },
-                        textStyle = androidx.compose.ui.text.TextStyle(color = Color.White),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedLabelColor = Color.White,
-                            unfocusedLabelColor = Color.White,
-                            focusedBorderColor = Color(0xFF8875FF),
-                            unfocusedBorderColor = Color.White
-                        ),
-                        visualTransformation = PasswordVisualTransformation() // For hiding password input
+                        shape = RoundedCornerShape(12.dp),
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true
                     )
 
                     Spacer(modifier = Modifier.height(16.dp))
-                    TextButton(
-                        onClick = {
-                            changePassword(
-                                oldPassword = oldPassword,
-                                newPassword = newPassword,
-                                onSuccess = {
-                                    Toast.makeText(context, "Password updated successfully!", Toast.LENGTH_SHORT).show()
-                                    showPasswordDialog = false
-                                },
-                                onFailure = {
-                                    Toast.makeText(context, "Old password incorrect", Toast.LENGTH_SHORT).show()
-                                }
-                            )
-                        },
-                        modifier = Modifier.align(Alignment.End)
+
+                    OutlinedTextField(
+                        value = newPassword,
+                        onValueChange = { newPassword = it },
+                        placeholder = { Text("New password", color = Color.Gray) },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedLabelColor = Color(0xFF8875FF),
+                            unfocusedLabelColor = Color.White.copy(alpha = 0.6f),
+                            focusedBorderColor = Color(0xFF8875FF),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                            cursorColor = Color(0xFF8875FF),
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        visualTransformation = PasswordVisualTransformation(),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(text = "Update", color = Color.White)
+                        EnhancedOutlinedButton(
+                            text = "Cancel",
+                            onClick = { showPasswordDialog = false },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        EnhancedGradientButton(
+                            text = "Update",
+                            onClick = {
+                                changePassword(
+                                    oldPassword = oldPassword,
+                                    newPassword = newPassword,
+                                    onSuccess = {
+                                        Toast.makeText(context, "Password updated successfully!", Toast.LENGTH_SHORT).show()
+                                        showPasswordDialog = false
+                                        oldPassword = ""
+                                        newPassword = ""
+                                    },
+                                    onFailure = {
+                                        Toast.makeText(context, "Failed to update password", Toast.LENGTH_SHORT).show()
+                                    }
+                                )
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
                     }
                 }
             }
         }
     }
 
-    Column(Modifier.fillMaxWidth()){
-        Text(
-            text = "Account",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Light,
-            color= Color.Gray
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showDialog = true }
-            ,
-        ) {
-            Image(
-                painter = profileIcon,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(10.dp))
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn() + slideInVertically(initialOffsetY = { 40 })
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "Change account name",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Light,
-                color = Color.White,
-                modifier = Modifier.weight(1f)
+                text = "Account",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.White.copy(alpha = 0.6f),
+                letterSpacing = 0.5.sp
             )
-            Image(
-                painter = nextIcon,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SettingsItem(
+                icon = painterResource(id = R.drawable.profileicon),
+                title = "Change account name",
+                onClick = { showDialog = true }
+            )
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            SettingsItem(
+                icon = painterResource(id = R.drawable.changepassword),
+                title = "Change account password",
+                onClick = { showPasswordDialog = true }
             )
         }
-        Spacer(modifier = Modifier.height(16.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showPasswordDialog = true },
-        ) {
-            Image(
-                painter = passwordIcon,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(
-                text = "Change account password",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Light,
-                color = Color.White,
-                modifier = Modifier.weight(1f)
-            )
-            Image(
-                painter = nextIcon,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
 @Composable
-fun ElAbout(auth: FirebaseAuth){
-    val aboutIcon= painterResource(id = R.drawable.about)
-    val faqIcon= painterResource(id = R.drawable.faq)
-    val logoutIcon= painterResource(id = R.drawable.logout)
-    val nextIcon= painterResource(id = R.drawable.nexticon)
-    val context= LocalContext.current
-    Column(Modifier.fillMaxWidth()){
-        Text(
-            text = "El Planner",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Light,
-            color= Color.Gray
-        )
-        Spacer(modifier = Modifier.height(16.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    val intent= Intent(context, AboutUs::class.java)
-                    context.startActivity(intent)
+fun ElAbout(auth: FirebaseAuth) {
+    val context = LocalContext.current
+    var visible by remember { mutableStateOf(false) }
 
-                },
-        ) {
-            Image(
-                painter = aboutIcon,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(10.dp))
+    LaunchedEffect(Unit) {
+        delay(500)
+        visible = true
+    }
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn() + slideInVertically(initialOffsetY = { 40 })
+    ) {
+        Column(modifier = Modifier.fillMaxWidth()) {
             Text(
-                text = "About US",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Light,
-                color = Color.White,
-                modifier = Modifier.weight(1f)
+                text = "El Planner",
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.White.copy(alpha = 0.6f),
+                letterSpacing = 0.5.sp
             )
-            Image(
-                painter = nextIcon,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-        Spacer(modifier = Modifier.height(16.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
-                    val intent= Intent(context, FAQActivity::class.java)
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            SettingsItem(
+                icon = painterResource(id = R.drawable.about),
+                title = "About Us",
+                onClick = {
+                    val intent = Intent(context, AboutUs::class.java)
                     context.startActivity(intent)
-                },
-        ) {
-            Image(
-                painter = faqIcon,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp)
+                }
             )
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(
-                text = "FAQ",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Light,
-                color = Color.White,
-                modifier = Modifier.weight(1f)
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            SettingsItem(
+                icon = painterResource(id = R.drawable.faq),
+                title = "FAQ",
+                onClick = {
+                    val intent = Intent(context, FAQActivity::class.java)
+                    context.startActivity(intent)
+                }
             )
-            Image(
-                painter = nextIcon,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp)
-            )
-        }
-        Spacer(modifier = Modifier.height(17.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable {
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Logout button
+            Surface(
+                onClick = {
                     auth.signOut()
                     val intent = Intent(context, MainActivity::class.java)
                     intent.putExtra("navigate_to", "Carousel")
                     context.startActivity(intent)
                 },
-        ) {
-            Image(
-                painter = logoutIcon,
-                contentDescription = null,
-                modifier = Modifier.size(24.dp)
-            )
-            Spacer(modifier = Modifier.width(10.dp))
-            Text(
-                text = "Log out",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Light,
-                color = Color(0xFFFF4949),
-                modifier = Modifier.weight(1f)
-            )
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = Color(0xFF1E1E2E),
+                shadowElevation = 4.dp
+            ) {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        painter = painterResource(id = R.drawable.logout),
+                        contentDescription = null,
+                        tint = Color(0xFFFF4949),
+                        modifier = Modifier.size(24.dp)
+                    )
+                    Spacer(modifier = Modifier.width(16.dp))
+                    Text(
+                        text = "Log out",
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = Color(0xFFFF4949),
+                        modifier = Modifier.weight(1f)
+                    )
+                    Icon(
+                        imageVector = Icons.Default.ExitToApp,
+                        contentDescription = null,
+                        tint = Color(0xFFFF4949),
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(100.dp))
         }
-        Spacer(modifier = Modifier.height(16.dp))
     }
 }
 
+@Composable
+fun SettingsItem(
+    icon: androidx.compose.ui.graphics.painter.Painter,
+    title: String,
+    onClick: () -> Unit
+) {
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.98f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+    )
+
+    Surface(
+        onClick = {
+            pressed = true
+            onClick()
+        },
+        modifier = Modifier
+            .fillMaxWidth()
+            .scale(scale),
+        shape = RoundedCornerShape(16.dp),
+        color = Color(0xFF1E1E2E),
+        shadowElevation = 4.dp
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = icon,
+                contentDescription = null,
+                tint = Color(0xFF8875FF),
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.width(16.dp))
+            Text(
+                text = title,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = Color.White,
+                modifier = Modifier.weight(1f)
+            )
+            Icon(
+                imageVector = Icons.Default.KeyboardArrowRight,
+                contentDescription = null,
+                tint = Color.White.copy(alpha = 0.5f),
+                modifier = Modifier.size(24.dp)
+            )
+        }
+    }
+
+    LaunchedEffect(pressed) {
+        if (pressed) {
+            delay(100)
+            pressed = false
+        }
+    }
+}
+
+// Reusable Enhanced Components
+
+@Composable
+fun GradientButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
+) {
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.95f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+    )
+
+    Surface(
+        onClick = {
+            if (enabled) {
+                pressed = true
+                onClick()
+            }
+        },
+        modifier = modifier
+            .scale(scale)
+            .height(56.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.Transparent,
+        enabled = enabled
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    if (enabled) {
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                Color(0xFF8875FF),
+                                Color(0xFFA890FF)
+                            )
+                        )
+                    } else {
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                Color.Gray.copy(alpha = 0.5f),
+                                Color.Gray.copy(alpha = 0.5f)
+                            )
+                        )
+                    }
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = text,
+                style = TextStyle(
+                    color = if (enabled) Color.White else Color.White.copy(alpha = 0.5f),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.sp
+                )
+            )
+        }
+    }
+
+    LaunchedEffect(pressed) {
+        if (pressed) {
+            delay(100)
+            pressed = false
+        }
+    }
+}
+
+@Composable
+fun OutlinedButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.95f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+    )
+
+    Surface(
+        onClick = {
+            pressed = true
+            onClick()
+        },
+        modifier = modifier
+            .scale(scale)
+            .height(56.dp)
+            .border(
+                width = 2.dp,
+                brush = Brush.horizontalGradient(
+                    colors = listOf(
+                        Color(0xFF8875FF),
+                        Color(0xFFA890FF)
+                    )
+                ),
+                shape = RoundedCornerShape(16.dp)
+            ),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.Transparent
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = text,
+                style = TextStyle(
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.sp
+                )
+            )
+        }
+    }
+
+    LaunchedEffect(pressed) {
+        if (pressed) {
+            delay(100)
+            pressed = false
+        }
+    }
+}
+
+
+
+// Firebase functions remain unchanged
 fun updateUsername(newUsername: String, onSuccess: () -> Unit, onFailure: (Exception) -> Unit) {
     val firebaseAuth = FirebaseAuth.getInstance()
     val currentUser = firebaseAuth.currentUser

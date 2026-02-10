@@ -3,13 +3,27 @@
   <component name="AppInsightsSettings">
     <option name="tabSettings">
       <map>
+        <entry key="Android Vitals">
+          <value>
+            <InsightsFilterSettings>
+              <option name="connection">
+                <ConnectionSetting>
+                  <option name="appId" value="com.coleshowers.elplanner" />
+                </ConnectionSetting>
+              </option>
+              <option name="signal" value="SIGNAL_UNSPECIFIED" />
+              <option name="timeIntervalDays" value="SEVEN_DAYS" />
+              <option name="visibilityType" value="ALL" />
+            </InsightsFilterSettings>
+          </value>
+        </entry>
         <entry key="Firebase Crashlytics">
           <value>
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="com.example.elplanner" />
-                  <option name="mobileSdkAppId" value="1:652103685217:android:553a2b25bdf7ce18524620" />
+                  <option name="appId" value="com.coleshowers.elplanner" />
+                  <option name="mobileSdkAppId" value="1:652103685217:android:6fb19cef3fa9f1c7524620" />
                   <option name="projectId" value="el-planner" />
                   <option name="projectNumber" value="652103685217" />
                 </ConnectionSetting>

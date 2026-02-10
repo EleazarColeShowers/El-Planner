@@ -1,8 +1,5 @@
 package com.example.elplanner
 
-//noinspection UsingMaterialAndMaterial3Libraries
-//noinspection UsingMaterialAndMaterial3Libraries
-//noinspection UsingMaterialAndMaterial3Libraries
 import android.app.Activity
 import android.content.Intent
 import android.os.Build
@@ -13,23 +10,14 @@ import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.annotation.RequiresApi
+import androidx.compose.animation.*
+import androidx.compose.animation.core.*
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.aspectRatio
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
@@ -40,43 +28,22 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.AlertDialog
 import androidx.compose.material.BottomNavigation
 import androidx.compose.material.BottomNavigationItem
-import androidx.compose.material.Checkbox
 import androidx.compose.material.DismissDirection
 import androidx.compose.material.DismissValue
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Icon
 import androidx.compose.material.SwipeToDismiss
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.ArrowForward
-import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material.rememberDismissState
-import androidx.compose.material3.Button
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.TextFieldDefaults
-import androidx.compose.material3.TimeInput
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.rememberTimePickerState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
@@ -93,21 +60,22 @@ import androidx.navigation.NavController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.elplanner.data.TaskDatabase
 import com.example.elplanner.data.TaskItem
-import com.example.elplanner.data.TaskRepository
 import com.example.elplanner.data.TaskViewModel
 import com.example.elplanner.data.ViewModelProvider
 import com.example.elplanner.ui.theme.ElPlannerTheme
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.delay
 import java.time.DayOfWeek
 import java.time.LocalDate
 import java.time.YearMonth
 import java.util.Calendar
+import kotlin.jvm.java
 
 class HomeActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var taskViewModel: TaskViewModel
+
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         auth = FirebaseAuth.getInstance()
@@ -119,18 +87,9 @@ class HomeActivity : ComponentActivity() {
             ElPlannerTheme {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
-                    color = Color.Black
+                    color = Color(0xFF121212)
                 ) {
-
-                    Column(
-                        horizontalAlignment = Alignment.CenterHorizontally
-                    ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally
-                        ) {
-                            Index(auth, taskViewModel)
-                        }
-                    }
+                    EnhancedIndex(auth, taskViewModel)
                 }
             }
         }
@@ -139,454 +98,452 @@ class HomeActivity : ComponentActivity() {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun Index(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
+fun EnhancedIndex(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
     val navController = rememberNavController()
     val taskList by taskViewModel.taskList.collectAsState()
     val searchQuery = remember { mutableStateOf("") }
 
-    Column(
-        modifier = Modifier.fillMaxSize()
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(
+                Brush.verticalGradient(
+                    colors = listOf(
+                        Color(0xFF1A1A2E),
+                        Color(0xFF16213E),
+                        Color(0xFF0F3460)
+                    )
+                )
+            )
     ) {
         Column(
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.fillMaxSize()
         ) {
-            val activity = LocalActivity.current
-            val navigateTo = activity?.intent?.getStringExtra("navigate_to")
-            HomePage(auth)
-            SearchBar(
-                hint = "Search books...",
-                onTextChange = { query ->
-                    searchQuery.value = query
-                },
-                onSearchClicked = {
-                    println("Search for: ${searchQuery.value}")
-                }
-            )
-            Spacer(modifier = Modifier.height(20.dp))
-            NavHost(navController = navController, startDestination = if (taskList.isEmpty()) "EmptyPage" else "TaskPage") {
-                composable("EmptyPage") { EmptyPage() }
-                composable("AddTask"){ AddTask(navController, taskViewModel)}
-                composable("DateTime"){ DateTime(navController, taskViewModel)}
-                composable("TimeView"){ TimeView(navController, taskViewModel)}
-                composable("PriorityFlag"){ PriorityFlag(navController, taskViewModel)}
-                composable("TaskPage"){ TaskPage(navController, taskViewModel, searchQuery.value)}
-            }
-            LaunchedEffect(navigateTo) {
-                if (navigateTo == "TaskPage") {
-                    navController.navigate("taskPage")
-                }
-            }
+            Column(
+                modifier = Modifier.weight(1f)
+            ) {
+                val activity = LocalActivity.current
+                val navigateTo = activity?.intent?.getStringExtra("navigate_to")
 
+                EnhancedHomePage(auth)
+                EnhancedSearchBar(
+                    hint = "Search tasks...",
+                    onTextChange = { query ->
+                        searchQuery.value = query
+                    }
+                )
+                Spacer(modifier = Modifier.height(20.dp))
+
+                NavHost(
+                    navController = navController,
+                    startDestination = if (taskList.isEmpty()) "EmptyPage" else "TaskPage"
+                ) {
+                    composable("EmptyPage") { EnhancedEmptyPage() }
+                    composable("AddTask") { EnhancedAddTask(navController, taskViewModel) }
+                    composable("DateTime") { EnhancedDateTime(navController, taskViewModel) }
+                    composable("TimeView") { EnhancedTimeView(navController, taskViewModel) }
+                    composable("PriorityFlag") { EnhancedPriorityFlag(navController, taskViewModel) }
+                    composable("TaskPage") { EnhancedTaskPage(navController, taskViewModel, searchQuery.value) }
+                }
+
+                LaunchedEffect(navigateTo) {
+                    if (navigateTo == "TaskPage") {
+                        navController.navigate("TaskPage")
+                    }
+                }
+            }
+            EnhancedBottomBar(navController)
         }
-        BottomBar(navController)
     }
 }
 
 @Composable
-fun HomePage(auth: FirebaseAuth) {
-    val menu = painterResource(id = R.drawable.menu)
-    val context = LocalContext.current
-    Column(
-        modifier = Modifier
+fun EnhancedHomePage(auth: FirebaseAuth) {
+    var visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        visible = true
+    }
+
+    AnimatedVisibility(
+        visible = visible,
+        enter = fadeIn() + slideInVertically(initialOffsetY = { -40 })
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(top = 32.dp, start = 24.dp, end = 24.dp, bottom = 16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.menu),
+                    contentDescription = "Menu",
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp)
+                )
+
+                Text(
+                    text = "My Tasks",
+                    style = TextStyle(
+                        color = Color.White,
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp
+                    )
+                )
+
+                Box(
+                    modifier = Modifier
+                        .size(40.dp)
+                        .background(
+                            Brush.linearGradient(
+                                colors = listOf(Color(0xFF8875FF), Color(0xFFA890FF))
+                            ),
+                            shape = CircleShape
+                        ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = auth.currentUser?.email?.first()?.uppercaseChar()?.toString() ?: "U",
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun EnhancedSearchBar(
+    modifier: Modifier = Modifier,
+    hint: String = "Search...",
+    onTextChange: (String) -> Unit,
+    textState: MutableState<String> = remember { mutableStateOf("") }
+) {
+    val text = textState.value
+    var isFocused by remember { mutableStateOf(false) }
+
+    Surface(
+        modifier = modifier
+            .padding(horizontal = 24.dp)
             .fillMaxWidth()
-            .padding(top = 24.dp)
+            .shadow(
+                elevation = if (isFocused) 8.dp else 4.dp,
+                shape = RoundedCornerShape(16.dp)
+            ),
+        shape = RoundedCornerShape(16.dp),
+        color = Color(0xFF1E1E2E)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 5.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+                .padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
-            Image(
-                painter = menu,
-                contentDescription = null,
-                modifier = Modifier
-                    .size(42.dp)
-                    .align(Alignment.CenterVertically)
-            )
-            Text(
-                text = "Index",
-                style = TextStyle(
-                    color = Color.White,
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Medium
-                ),
-                modifier = Modifier.align(Alignment.CenterVertically)
-            )
-        }
-    }
-}
-
-@Composable
-fun SearchBar(modifier: Modifier = Modifier, hint: String = "Search...", onTextChange: (String) -> Unit, onSearchClicked: () -> Unit, textState: MutableState<String> = remember { mutableStateOf("") }) {
-    val text = textState.value
-
-    Row(
-        modifier = modifier
-            .padding(16.dp)
-            .fillMaxWidth()
-            .background(color = Color.Black, shape = RoundedCornerShape(6.dp))
-            .border(width = 1.dp, color = Color.Gray, shape = RoundedCornerShape(6.dp)),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Center
-    ) {
-        BasicTextField(
-            value = text,
-            onValueChange = {
-                textState.value = it
-                onTextChange(it)
-            },
-            modifier = Modifier
-                .weight(1f)
-                .padding(end = 8.dp, start = 8.dp),
-            singleLine = true,
-            textStyle = TextStyle(
-                color = Color.White,
-                fontSize = 16.sp
-            ),
-            decorationBox = { innerTextField ->
-                if (text.isEmpty()) {
-                    Text(
-                        text = hint,
-                        color = Color.Gray,
-                        fontSize = 16.sp
-                    )
-                }
-                innerTextField()
-            },
-            keyboardOptions = KeyboardOptions(
-                keyboardType = KeyboardType.Text,
-                imeAction = ImeAction.Search
-            ),
-            keyboardActions = KeyboardActions(
-                onSearch = {
-                    onSearchClicked()
-                }
-            )
-        )
-
-        IconButton(onClick = { onSearchClicked() }) {
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = "Search",
-                tint = Color.Gray
+                tint = if (isFocused) Color(0xFF8875FF) else Color.Gray,
+                modifier = Modifier.size(24.dp)
             )
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            BasicTextField(
+                value = text,
+                onValueChange = {
+                    textState.value = it
+                    onTextChange(it)
+                },
+                modifier = Modifier.weight(1f),
+                singleLine = true,
+                textStyle = TextStyle(
+                    color = Color.White,
+                    fontSize = 16.sp
+                ),
+                decorationBox = { innerTextField ->
+                    if (text.isEmpty()) {
+                        Text(
+                            text = hint,
+                            color = Color.Gray,
+                            fontSize = 16.sp
+                        )
+                    }
+                    innerTextField()
+                },
+                keyboardOptions = KeyboardOptions(
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Search
+                )
+            )
+
+            if (text.isNotEmpty()) {
+                IconButton(onClick = {
+                    textState.value = ""
+                    onTextChange("")
+                }) {
+                    Icon(
+                        imageVector = Icons.Default.Clear,
+                        contentDescription = "Clear",
+                        tint = Color.Gray,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
         }
     }
 }
 
 @Composable
-fun EmptyPage(){
-    val checkList= painterResource(id = R.drawable.checklisthome)
+fun EnhancedEmptyPage() {
+    var visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        visible = true
+    }
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(top = 75.dp),
+            .padding(top = 100.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
-    ){
-        Image(
-            painter = checkList,
-            contentDescription = null,
-            modifier = Modifier.size(227.dp)
-        )
-        Spacer(modifier = Modifier.height(39.dp))
-        Text(
-            text = "What do you want to do today?",
-            style = TextStyle(
-                color = Color.White,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Light
-            ),
-            textAlign = TextAlign.Center,
-        )
-        Spacer(modifier = Modifier.height(10.dp))
-        Text(
-            text = "Tap + to add your tasks",
-            style = TextStyle(
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Light
-            ),
-            textAlign = TextAlign.Center,
-        )
-    }
+    ) {
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn() + scaleIn()
+        ) {
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Image(
+                    painter = painterResource(id = R.drawable.checklisthome),
+                    contentDescription = null,
+                    modifier = Modifier.size(240.dp)
+                )
 
+                Spacer(modifier = Modifier.height(48.dp))
+
+                Text(
+                    text = "What do you want to do today?",
+                    style = TextStyle(
+                        color = Color.White,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Medium,
+                        letterSpacing = 0.5.sp
+                    ),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth(0.8f)
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = "Tap + to add your tasks",
+                    style = TextStyle(
+                        color = Color.White.copy(alpha = 0.6f),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Normal
+                    ),
+                    textAlign = TextAlign.Center
+                )
+            }
+        }
+    }
 }
 
 @Composable
-fun BottomBar(navController: NavController) {
+fun EnhancedBottomBar(navController: NavController) {
     val context = LocalContext.current
     val items = listOf("Index", "Profile")
     val icons = mapOf(
         "Index" to R.drawable.indexicon,
         "Profile" to R.drawable.profileicon
     )
-
     val selectedIndex = remember { mutableIntStateOf(0) }
 
     Box(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth()
     ) {
-        BottomNavigation(
-            backgroundColor = Color(0xFF363636),
-            contentColor = Color.White,
+        Surface(
             modifier = Modifier
-                .height(114.dp)
-                .padding(top = 12.dp)
+                .fillMaxWidth()
+                .padding(top = 12.dp),
+            color = Color(0xFF1E1E2E),
+            shadowElevation = 16.dp
         ) {
-            items.forEachIndexed { index, item ->
-                BottomNavigationItem(
-                    icon = {
-                        Icon(
-                            painter = painterResource(id = icons[item] ?: R.drawable.menu),
-                            contentDescription = item,
-                            modifier = Modifier.size(24.dp)
-                        )
-                    },
-                    label = {
-                        Text(
-                            item,
-                            color = Color.White,
-                            style = TextStyle(fontSize = 12.sp, fontWeight = FontWeight.Light)
-                        )
-                    },
-                    selected = selectedIndex.intValue == index,
-                    onClick = {
-                        selectedIndex.intValue = index
-                        when (item) {
-                            "Profile" -> {
-                                val intent = Intent(context, ProfileActivity::class.java)
-                                context.startActivity(intent)
-                            }
-                            "Index"->{
-                                val intent= Intent(context, HomeActivity::class.java)
-                                context.startActivity(intent)
-
-                            }
-                            // Add navigation for other items as needed
-                            else -> {
-                                // Handle navigation for other items here
-                                // For example:
-                                // navController.navigate(item)
+            BottomNavigation(
+                backgroundColor = Color(0xFF1E1E2E),
+                contentColor = Color.White,
+                modifier = Modifier.height(72.dp),
+                elevation = 0.dp
+            ) {
+                items.forEachIndexed { index, item ->
+                    BottomNavigationItem(
+                        icon = {
+                            Icon(
+                                painter = painterResource(id = icons[item] ?: R.drawable.menu),
+                                contentDescription = item,
+                                modifier = Modifier.size(24.dp),
+                                tint = if (selectedIndex.intValue == index) Color(0xFF8875FF) else Color.Gray
+                            )
+                        },
+                        label = {
+                            Text(
+                                item,
+                                color = if (selectedIndex.intValue == index) Color(0xFF8875FF) else Color.Gray,
+                                style = TextStyle(
+                                    fontSize = 12.sp,
+                                    fontWeight = if (selectedIndex.intValue == index) FontWeight.SemiBold else FontWeight.Normal
+                                )
+                            )
+                        },
+                        selected = selectedIndex.intValue == index,
+                        onClick = {
+                            selectedIndex.intValue = index
+                            when (item) {
+                                "Profile" -> {
+                                    val intent = Intent(context, ProfileActivity::class.java)
+                                    context.startActivity(intent)
+                                }
+                                "Index" -> {
+                                    val intent = Intent(context, HomeActivity::class.java)
+                                    context.startActivity(intent)
+                                }
                             }
                         }
-                    }
-                )
-            }
-        }
-
-        Box(
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .offset(y = (-36).dp)
-                .size(64.dp)
-                .background(Color(0xFF8875FF), shape = CircleShape)
-                .clickable {
-                    navController.navigate("AddTask")
-                },
-            contentAlignment = Alignment.Center
-        ) {
-            Icon(
-                painter = painterResource(id = R.drawable.addicon),
-                contentDescription = "Add",
-                tint = Color.White,
-                modifier = Modifier.size(32.dp)
-            )
-        }
-    }
-}
-@RequiresApi(Build.VERSION_CODES.O)
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun AddTask(navController: NavController, taskViewModel: TaskViewModel) {
-//    val context = LocalContext.current
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .height(250.dp)
-                .background(
-                    Color(0xFF363636),
-                    shape = RoundedCornerShape(16.dp)
-                )
-                .padding(10.dp),
-            verticalArrangement = Arrangement.Center
-        ) {
-            Text(
-                text = "Add Task",
-                style = TextStyle(
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = Color.White
-                ),
-                modifier = Modifier.padding(bottom = 12.dp)
-            )
-
-            OutlinedTextField(
-                value = taskViewModel.task,
-                onValueChange = { taskViewModel.task = it },
-                label = { Text("Task") },
-                modifier = Modifier
-                    .fillMaxWidth(0.9f),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedLabelColor = Color.White,
-                    unfocusedLabelColor = Color.White,
-                    focusedBorderColor = Color(0xFF8875FF),
-                    unfocusedBorderColor = Color.White
-                )
-                ,
-                textStyle = TextStyle(
-                    color = Color.White,
-                ),
-
-            )
-            Spacer(modifier = Modifier.height(5.dp))
-            OutlinedTextField(
-                value = taskViewModel.description,
-                onValueChange = { taskViewModel.description = it },
-                label = { Text("Description (Optional)") },
-                modifier = Modifier
-                    .fillMaxWidth(0.9f),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedLabelColor = Color.White,
-                    unfocusedLabelColor = Color.White,
-                    focusedBorderColor = Color(0xFF8875FF),
-                    unfocusedBorderColor = Color.White
-                ),
-                textStyle = TextStyle(
-                    color = Color.White
-                )
-            )
-            Spacer(modifier = Modifier.height(15.dp))
-            Row(modifier= Modifier.fillMaxWidth()){
-                Column(
-                    modifier = Modifier
-                        .width(153.dp)
-                        .background(Color(0xFF8875FF), shape = RoundedCornerShape(10.dp))
-                        .padding(horizontal = 25.dp)
-                        .height(40.dp)
-                        .clickable {
-                            navController.currentBackStackEntry?.savedStateHandle?.set(
-                                "task", taskViewModel.task
-                            )
-                            navController.currentBackStackEntry?.savedStateHandle?.set(
-                                "description", taskViewModel.description
-                            )
-                            navController.navigate("DateTime")
-                        },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Choose Date",
-                        style = TextStyle(
-                            color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        textAlign = TextAlign.Center
                     )
                 }
             }
         }
+
+        // Floating Action Button
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopCenter)
+                .offset(y = (-28).dp)
+        ) {
+            FloatingActionButton(
+                onClick = { navController.navigate("AddTask") },
+                modifier = Modifier.size(64.dp),
+                containerColor = Color(0xFF8875FF),
+                elevation = FloatingActionButtonDefaults.elevation(
+                    defaultElevation = 8.dp,
+                    pressedElevation = 12.dp
+                )
+            ) {
+                Icon(
+                    painter = painterResource(id = R.drawable.addicon),
+                    contentDescription = "Add",
+                    tint = Color.White,
+                    modifier = Modifier.size(28.dp)
+                )
+            }
+        }
     }
 }
 
 @RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DateTime(navController: NavController, taskViewModel: TaskViewModel) {
-    val task = navController.previousBackStackEntry?.savedStateHandle?.get<String>("task")
-    val description = navController.previousBackStackEntry?.savedStateHandle?.get<String>("description")
-    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+fun EnhancedAddTask(navController: NavController, taskViewModel: TaskViewModel) {
+    var visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        visible = true
+    }
 
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .height(450.dp)
-                .background(
-                    Color(0xFF363636),
-                    shape = RoundedCornerShape(16.dp)
-
-                )
-                .padding(10.dp),
-            verticalArrangement = Arrangement.Center
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn() + scaleIn()
         ) {
-            CalendarView(onDateSelected = { date ->
-                selectedDate = date
-            })
-
-            Row(
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                modifier = Modifier.fillMaxWidth()
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(24.dp),
+                color = Color(0xFF1E1E2E),
+                shadowElevation = 16.dp
             ) {
                 Column(
-                    modifier = Modifier
-                        .width(153.dp)
-                        .background(Color.Transparent, shape = RoundedCornerShape(10.dp))
-                        .padding(horizontal = 25.dp)
-                        .height(40.dp)
-                        .clickable {
-                            navController.popBackStack()
-                        },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    modifier = Modifier.padding(24.dp)
                 ) {
                     Text(
-                        text = "Cancel",
+                        text = "Add Task",
                         style = TextStyle(
-                            color = Color(0xFF8875FF),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        textAlign = TextAlign.Center
-                    )
-                }
-
-                Column(
-                    modifier = Modifier
-                        .width(153.dp)
-                        .background(Color(0xFF8875FF), shape = RoundedCornerShape(10.dp))
-                        .padding(horizontal = 25.dp)
-                        .height(40.dp)
-                        .clickable {
-                            selectedDate?.let { date ->
-                                // Save task, description, and date to the savedStateHandle
-                                navController.currentBackStackEntry?.savedStateHandle?.set(
-                                    "task",
-                                    task
-                                )
-                                navController.currentBackStackEntry?.savedStateHandle?.set(
-                                    "description",
-                                    description
-                                )
-                                navController.currentBackStackEntry?.savedStateHandle?.set(
-                                    "selectedDate",
-                                    date.toString()
-                                )
-                                navController.navigate("TimeView")
-                            }
-                        },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Choose Time",
-                        style = TextStyle(
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
                             color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
+                            letterSpacing = 0.5.sp
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    OutlinedTextField(
+                        value = taskViewModel.task,
+                        onValueChange = { taskViewModel.task = it },
+                        label = { Text("Task Title") },
+                        modifier = Modifier.fillMaxWidth(),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedLabelColor = Color(0xFF8875FF),
+                            unfocusedLabelColor = Color.White.copy(alpha = 0.6f),
+                            focusedBorderColor = Color(0xFF8875FF),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                            cursorColor = Color(0xFF8875FF),
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent
                         ),
-                        textAlign = TextAlign.Center
+                        shape = RoundedCornerShape(12.dp),
+                        singleLine = true
+                    )
+
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    OutlinedTextField(
+                        value = taskViewModel.description,
+                        onValueChange = { taskViewModel.description = it },
+                        label = { Text("Description (Optional)") },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(100.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedTextColor = Color.White,
+                            unfocusedTextColor = Color.White,
+                            focusedLabelColor = Color(0xFF8875FF),
+                            unfocusedLabelColor = Color.White.copy(alpha = 0.6f),
+                            focusedBorderColor = Color(0xFF8875FF),
+                            unfocusedBorderColor = Color.White.copy(alpha = 0.3f),
+                            cursorColor = Color(0xFF8875FF),
+                            focusedContainerColor = Color.Transparent,
+                            unfocusedContainerColor = Color.Transparent
+                        ),
+                        shape = RoundedCornerShape(12.dp),
+                        maxLines = 3
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    EnhancedGradientButton(
+                        text = "Choose Date & Time",
+                        onClick = {
+                            navController.currentBackStackEntry?.savedStateHandle?.set("task", taskViewModel.task)
+                            navController.currentBackStackEntry?.savedStateHandle?.set("description", taskViewModel.description)
+                            navController.navigate("DateTime")
+                        },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
@@ -596,7 +553,86 @@ fun DateTime(navController: NavController, taskViewModel: TaskViewModel) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun CalendarView(onDateSelected: (LocalDate) -> Unit) {
+fun EnhancedDateTime(navController: NavController, taskViewModel: TaskViewModel) {
+    val task = navController.previousBackStackEntry?.savedStateHandle?.get<String>("task")
+    val description = navController.previousBackStackEntry?.savedStateHandle?.get<String>("description")
+    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+    var visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        visible = true
+    }
+
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn() + scaleIn()
+        ) {
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(24.dp),
+                color = Color(0xFF1E1E2E),
+                shadowElevation = 16.dp
+            ) {
+                Column(
+                    modifier = Modifier.padding(24.dp)
+                ) {
+                    Text(
+                        text = "Select Date",
+                        style = TextStyle(
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Color.White,
+                            letterSpacing = 0.5.sp
+                        )
+                    )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    EnhancedCalendarView(onDateSelected = { date ->
+                        selectedDate = date
+                    })
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        EnhancedOutlinedButton(
+                            text = "Cancel",
+                            onClick = { navController.popBackStack() },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        EnhancedGradientButton(
+                            text = "Next",
+                            onClick = {
+                                selectedDate?.let { date ->
+                                    navController.currentBackStackEntry?.savedStateHandle?.set("task", task)
+                                    navController.currentBackStackEntry?.savedStateHandle?.set("description", description)
+                                    navController.currentBackStackEntry?.savedStateHandle?.set("selectedDate", date.toString())
+                                    navController.navigate("TimeView")
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                            enabled = selectedDate != null
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@RequiresApi(Build.VERSION_CODES.O)
+@Composable
+fun EnhancedCalendarView(onDateSelected: (LocalDate) -> Unit) {
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
     val today = LocalDate.now()
@@ -604,6 +640,7 @@ fun CalendarView(onDateSelected: (LocalDate) -> Unit) {
     Column(
         modifier = Modifier.fillMaxWidth()
     ) {
+        // Month/Year selector
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -613,9 +650,10 @@ fun CalendarView(onDateSelected: (LocalDate) -> Unit) {
                 Icon(
                     imageVector = Icons.Default.ArrowBack,
                     contentDescription = "Previous Month",
-                    tint = Color.White
+                    tint = Color(0xFF8875FF)
                 )
             }
+
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -623,28 +661,48 @@ fun CalendarView(onDateSelected: (LocalDate) -> Unit) {
                     text = currentMonth.month.name.lowercase().replaceFirstChar { it.uppercase() },
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 14.sp,
-                    textAlign = TextAlign.Center
+                    fontSize = 18.sp
                 )
                 Text(
                     text = "${currentMonth.year}",
-                    color = Color.White,
-                    fontWeight = FontWeight.Bold,
-                    fontSize = 10.sp,
-                    textAlign = TextAlign.Center
+                    color = Color.White.copy(alpha = 0.6f),
+                    fontWeight = FontWeight.Normal,
+                    fontSize = 14.sp
                 )
             }
+
             IconButton(onClick = { currentMonth = currentMonth.plusMonths(1) }) {
                 Icon(
                     imageVector = Icons.Default.ArrowForward,
                     contentDescription = "Next Month",
-                    tint = Color.White
+                    tint = Color(0xFF8875FF)
                 )
             }
         }
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Day labels
+        Row(modifier = Modifier.fillMaxWidth()) {
+            listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").forEach { day ->
+                Text(
+                    text = day,
+                    modifier = Modifier.weight(1f),
+                    textAlign = TextAlign.Center,
+                    color = Color.White.copy(alpha = 0.5f),
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
+        // Calendar grid
         val firstDayOfMonth = currentMonth.atDay(1).dayOfWeek
         val daysInMonth = currentMonth.lengthOfMonth()
         var day = 1
+
         for (week in 0..5) {
             Row(modifier = Modifier.fillMaxWidth()) {
                 for (dayOfWeek in DayOfWeek.entries) {
@@ -652,33 +710,44 @@ fun CalendarView(onDateSelected: (LocalDate) -> Unit) {
                         modifier = Modifier
                             .weight(1f)
                             .aspectRatio(1f)
-                            .padding(3.dp),
+                            .padding(4.dp),
                         contentAlignment = Alignment.Center
                     ) {
                         if (week == 0 && dayOfWeek < firstDayOfMonth || day > daysInMonth) {
                             Spacer(modifier = Modifier.fillMaxSize())
                         } else {
                             val date = currentMonth.atDay(day)
-                            Box(
+                            val isSelected = selectedDate == date
+                            val isToday = today == date
+
+                            Surface(
                                 modifier = Modifier
-                                    .background(
-                                        when {
-                                            today == date -> Color(0xFF8875FF)
-                                            selectedDate == date -> Color(0xFF8875FF)
-                                            else -> Color.Transparent
-                                        }
-                                    )
-                                    .padding(3.dp)
+                                    .fillMaxSize()
                                     .clickable {
                                         selectedDate = date
                                         onDateSelected(date)
-                                    }
+                                    },
+                                shape = CircleShape,
+                                color = when {
+                                    isSelected -> Color(0xFF8875FF)
+                                    isToday -> Color(0xFF8875FF).copy(alpha = 0.3f)
+                                    else -> Color.Transparent
+                                }
                             ) {
-                                Text(
-                                    text = day.toString(),
-                                    color = Color.White,
-                                    fontSize = 12.sp
-                                )
+                                Box(
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = day.toString(),
+                                        color = when {
+                                            isSelected -> Color.White
+                                            isToday -> Color(0xFF8875FF)
+                                            else -> Color.White
+                                        },
+                                        fontSize = 14.sp,
+                                        fontWeight = if (isSelected || isToday) FontWeight.Bold else FontWeight.Normal
+                                    )
+                                }
                             }
                             day++
                         }
@@ -691,117 +760,80 @@ fun CalendarView(onDateSelected: (LocalDate) -> Unit) {
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun TimeView(navController: NavController, taskViewModel: TaskViewModel) {
+fun EnhancedTimeView(navController: NavController, taskViewModel: TaskViewModel) {
     val task = navController.previousBackStackEntry?.savedStateHandle?.get<String>("task")
     val description = navController.previousBackStackEntry?.savedStateHandle?.get<String>("description")
     val selectedDate = navController.previousBackStackEntry?.savedStateHandle?.get<String>("selectedDate")
     var selectedTime by remember { mutableStateOf<Pair<Int, Int>?>(null) }
+    var visible by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        visible = true
+    }
 
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .height(250.dp)
-                .background(
-                    Color(0xFF363636),
-                    shape = RoundedCornerShape(16.dp)
-                )
-                .padding(10.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn() + scaleIn()
         ) {
-            Text(
-                text = "Choose Time",
-                style = TextStyle(
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                ),
-            )
-
-            Row(
+            Surface(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 20.dp),
-                horizontalArrangement = Arrangement.Center
-            ) {
-                DigitalTime(onTimeSelected = { hour, minute ->
-                    selectedTime = Pair(hour, minute)
-                })
-            }
-
-            Row(
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                modifier = Modifier.fillMaxWidth()
+                    .fillMaxWidth(0.9f)
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(24.dp),
+                color = Color(0xFF1E1E2E),
+                shadowElevation = 16.dp
             ) {
                 Column(
-                    modifier = Modifier
-                        .width(153.dp)
-                        .background(Color.Transparent, shape = RoundedCornerShape(10.dp))
-                        .padding(horizontal = 25.dp)
-                        .height(40.dp)
-                        .clickable {
-                            navController.popBackStack()
-                        },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
+                    modifier = Modifier.padding(24.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "Cancel",
+                        text = "Choose Time",
                         style = TextStyle(
-                            color = Color(0xFF8875FF),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        textAlign = TextAlign.Center
-                    )
-                }
-                Column(
-                    modifier = Modifier
-                        .width(153.dp)
-                        .background(Color(0xFF8875FF), shape = RoundedCornerShape(10.dp))
-                        .padding(horizontal = 25.dp)
-                        .height(40.dp)
-                        .clickable {
-                            selectedTime?.let { time ->
-                                val timeString = "${time.first}:${time.second}"
-
-                                navController.currentBackStackEntry?.savedStateHandle?.set(
-                                    "task",
-                                    task
-                                )
-                                navController.currentBackStackEntry?.savedStateHandle?.set(
-                                    "description",
-                                    description
-                                )
-                                navController.currentBackStackEntry?.savedStateHandle?.set(
-                                    "selectedTime",
-                                    timeString
-                                )
-                                selectedDate?.let { date ->
-                                    navController.currentBackStackEntry?.savedStateHandle?.set(
-                                        "selectedDate",
-                                        date
-                                    )
-                                }
-                                navController.navigate("PriorityFlag")
-                            }
-                        },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Save",
-                        style = TextStyle(
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
                             color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        textAlign = TextAlign.Center
+                            letterSpacing = 0.5.sp
+                        )
                     )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    EnhancedDigitalTime(onTimeSelected = { hour, minute ->
+                        selectedTime = Pair(hour, minute)
+                    })
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        EnhancedOutlinedButton(
+                            text = "Cancel",
+                            onClick = { navController.popBackStack() },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        EnhancedGradientButton(
+                            text = "Next",
+                            onClick = {
+                                selectedTime?.let { time ->
+                                    val timeString = String.format("%02d:%02d", time.first, time.second)
+                                    navController.currentBackStackEntry?.savedStateHandle?.set("task", task)
+                                    navController.currentBackStackEntry?.savedStateHandle?.set("description", description)
+                                    navController.currentBackStackEntry?.savedStateHandle?.set("selectedTime", timeString)
+                                    navController.currentBackStackEntry?.savedStateHandle?.set("selectedDate", selectedDate)
+                                    navController.navigate("PriorityFlag")
+                                }
+                            },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
                 }
             }
         }
@@ -810,215 +842,137 @@ fun TimeView(navController: NavController, taskViewModel: TaskViewModel) {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun DigitalTime(onTimeSelected: (Int, Int) -> Unit) {
-    MyAppTheme {
-        val currentTime = Calendar.getInstance()
-
-        val timePickerState = rememberTimePickerState(
-            initialHour = currentTime.get(Calendar.HOUR_OF_DAY),
-            initialMinute = currentTime.get(Calendar.MINUTE),
-            is24Hour = true,
-        )
-        Column {
-            TimeInput(
-                state = timePickerState,
-            )
-            onTimeSelected(timePickerState.hour, timePickerState.minute)
-        }
-    }
-}
-
-@Composable
-fun MyAppTheme(content: @Composable () -> Unit) {
-    MaterialTheme(
-        colorScheme = darkColorScheme(
-            primary = Color(0xFFBB86FC),
-            secondary = Color(0xFF03DAC6),
-            background = Color(0xFF121212),
-            surface = Color(0xFF121212),
-            onPrimary = Color.White,
-            onSecondary = Color.Black,
-            onBackground = Color.White,
-            onSurface = Color.White,
-        ),
-        content = content
+fun EnhancedDigitalTime(onTimeSelected: (Int, Int) -> Unit) {
+    val currentTime = Calendar.getInstance()
+    val timePickerState = rememberTimePickerState(
+        initialHour = currentTime.get(Calendar.HOUR_OF_DAY),
+        initialMinute = currentTime.get(Calendar.MINUTE),
+        is24Hour = true
     )
+
+    TimeInput(
+        state = timePickerState,
+        colors = TimePickerDefaults.colors(
+            clockDialColor = Color(0xFF2A2A3E),
+            selectorColor = Color(0xFF8875FF),
+            containerColor = Color.Transparent,
+            periodSelectorBorderColor = Color(0xFF8875FF),
+            clockDialSelectedContentColor = Color.White,
+            clockDialUnselectedContentColor = Color.White.copy(alpha = 0.6f),
+            periodSelectorSelectedContainerColor = Color(0xFF8875FF),
+            periodSelectorUnselectedContainerColor = Color.Transparent,
+            periodSelectorSelectedContentColor = Color.White,
+            periodSelectorUnselectedContentColor = Color.White.copy(alpha = 0.6f),
+            timeSelectorSelectedContainerColor = Color(0xFF8875FF),
+            timeSelectorUnselectedContainerColor = Color(0xFF2A2A3E),
+            timeSelectorSelectedContentColor = Color.White,
+            timeSelectorUnselectedContentColor = Color.White.copy(alpha = 0.6f)
+        )
+    )
+
+    onTimeSelected(timePickerState.hour, timePickerState.minute)
 }
 
 @Composable
-fun PriorityFlag(navController: NavController, taskViewModel: TaskViewModel) {
+fun EnhancedPriorityFlag(navController: NavController, taskViewModel: TaskViewModel) {
     val task = navController.previousBackStackEntry?.savedStateHandle?.get<String>("task")
     val description = navController.previousBackStackEntry?.savedStateHandle?.get<String>("description")
     val selectedDate = navController.previousBackStackEntry?.savedStateHandle?.get<String>("selectedDate")
     val selectedTime = navController.previousBackStackEntry?.savedStateHandle?.get<String>("selectedTime")
+    var selectedPriority by remember { mutableStateOf(-1) }
+    var visible by remember { mutableStateOf(false) }
 
-    val priorityFlag = painterResource(id = R.drawable.priorityflag)
-    var selectedColumn by remember { mutableStateOf(-1) }
+    LaunchedEffect(Unit) {
+        visible = true
+    }
 
     Box(
         modifier = Modifier.fillMaxSize(),
         contentAlignment = Alignment.Center
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth(0.9f)
-                .height(360.dp)
-                .background(Color(0xFF363636))
-                .padding(10.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+        AnimatedVisibility(
+            visible = visible,
+            enter = fadeIn() + scaleIn()
         ) {
-            Text(
-                text = "Task Priority",
-                style = TextStyle(
-                    color = Color.White,
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium
-                )
-            )
-            Spacer(modifier = Modifier.height(22.dp))
-
-            @Composable
-            fun PriorityColumn(index: Int, number: String) {
-                val backgroundColor = if (selectedColumn == index) Color(0xFF8875FF) else Color(0xFF272727)
-
+            Surface(
+                modifier = Modifier
+                    .fillMaxWidth(0.9f)
+                    .wrapContentHeight(),
+                shape = RoundedCornerShape(24.dp),
+                color = Color(0xFF1E1E2E),
+                shadowElevation = 16.dp
+            ) {
                 Column(
-                    modifier = Modifier
-                        .size(64.dp)
-                        .background(backgroundColor)
-                        .clip(RoundedCornerShape(8.dp))
-                        .clickable { selectedColumn = index }, // Update selected column
+                    modifier = Modifier.padding(24.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    Spacer(modifier = Modifier.height(7.dp))
-                    Image(
-                        painter = priorityFlag,
-                        contentDescription = null,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.height(5.dp))
                     Text(
-                        text = number,
-                        color = Color.White,
-                        style = TextStyle(fontSize = 16.sp)
-                    )
-                }
-            }
-
-            Row(
-                modifier = Modifier.fillMaxWidth(0.9f),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                PriorityColumn(index = 0, number = "1")
-                PriorityColumn(index = 1, number = "2")
-                PriorityColumn(index = 2, number = "3")
-                PriorityColumn(index = 3, number = "4")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(0.9f),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                PriorityColumn(index = 4, number = "5")
-                PriorityColumn(index = 5, number = "6")
-                PriorityColumn(index = 6, number = "7")
-                PriorityColumn(index = 7, number = "8")
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(0.9f),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                PriorityColumn(index = 8, number = "9")
-                PriorityColumn(index = 9, number = "10")
-            }
-            Spacer(modifier = Modifier.height(18.dp))
-            Row(
-                horizontalArrangement = Arrangement.SpaceEvenly,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Column(
-                    modifier = Modifier
-                        .width(153.dp)
-                        .background(Color.Transparent, shape = RoundedCornerShape(10.dp))
-                        .padding(horizontal = 25.dp)
-                        .height(40.dp)
-                        .clickable {
-                            navController.popBackStack()
-                        },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Cancel",
+                        text = "Task Priority",
                         style = TextStyle(
-                            color = Color(0xFF8875FF),
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        textAlign = TextAlign.Center
-                    )
-                }
-
-                Column(
-                    modifier = Modifier
-                        .width(153.dp)
-                        .background(Color(0xFF8875FF), shape = RoundedCornerShape(10.dp))
-                        .padding(horizontal = 25.dp)
-                        .height(40.dp)
-                        .clickable {
-                            if (selectedColumn != -1) {
-                                taskViewModel.selectedPriority = selectedColumn + 1
-
-                                navController.currentBackStackEntry?.savedStateHandle?.set(
-                                    "task",
-                                    task
-                                )
-                                navController.currentBackStackEntry?.savedStateHandle?.set(
-                                    "description",
-                                    description
-                                )
-                                navController.currentBackStackEntry?.savedStateHandle?.set(
-                                    "selectedDate",
-                                    selectedDate
-                                )
-                                navController.currentBackStackEntry?.savedStateHandle?.set(
-                                    "selectedTime",
-                                    selectedTime
-                                )
-                                navController.currentBackStackEntry?.savedStateHandle?.set(
-                                    "priorityFlag",
-                                    selectedColumn + 1
-                                )
-
-                                navController.navigate("TaskPage")
-
-                            }
-                            Log.d(
-                                "AddTask",
-                                "Selected Date: $selectedDate, Selected Time: $selectedTime"
-                            )
-                            Log.d(
-                                "AddTask",
-                                "Task: $task, Description: $description, priorityflag: $priorityFlag"
-                            )
-                        },
-                    horizontalAlignment = Alignment.CenterHorizontally,
-                    verticalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = "Save",
-                        style = TextStyle(
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
                             color = Color.White,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Medium
-                        ),
-                        textAlign = TextAlign.Center
+                            letterSpacing = 0.5.sp
+                        )
                     )
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    // Priority grid
+                    Column(
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        for (row in 0..2) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                for (col in 0..3) {
+                                    val index = row * 4 + col
+                                    if (index < 10) {
+                                        EnhancedPriorityBox(
+                                            number = index + 1,
+                                            isSelected = selectedPriority == index,
+                                            onClick = { selectedPriority = index },
+                                            modifier = Modifier.weight(1f)
+                                        )
+                                    } else if (row == 2 && col > 1) {
+                                        Spacer(modifier = Modifier.weight(1f))
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(24.dp))
+
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        EnhancedOutlinedButton(
+                            text = "Cancel",
+                            onClick = { navController.popBackStack() },
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        EnhancedGradientButton(
+                            text = "Save",
+                            onClick = {
+                                if (selectedPriority != -1) {
+                                    taskViewModel.selectedPriority = selectedPriority + 1
+                                    navController.currentBackStackEntry?.savedStateHandle?.set("task", task)
+                                    navController.currentBackStackEntry?.savedStateHandle?.set("description", description)
+                                    navController.currentBackStackEntry?.savedStateHandle?.set("selectedDate", selectedDate)
+                                    navController.currentBackStackEntry?.savedStateHandle?.set("selectedTime", selectedTime)
+                                    navController.currentBackStackEntry?.savedStateHandle?.set("priorityFlag", selectedPriority + 1)
+                                    navController.navigate("TaskPage")
+                                }
+                            },
+                            modifier = Modifier.weight(1f),
+                            enabled = selectedPriority != -1
+                        )
+                    }
                 }
             }
         }
@@ -1026,16 +980,69 @@ fun PriorityFlag(navController: NavController, taskViewModel: TaskViewModel) {
 }
 
 @Composable
-fun TaskPage(navController: NavController, taskViewModel: TaskViewModel, searchQuery: String) {
+fun EnhancedPriorityBox(
+    number: Int,
+    isSelected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.9f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+    )
+
+    Surface(
+        onClick = {
+            pressed = true
+            onClick()
+        },
+        modifier = modifier
+            .aspectRatio(1f)
+            .scale(scale),
+        shape = RoundedCornerShape(12.dp),
+        color = if (isSelected) Color(0xFF8875FF) else Color(0xFF2A2A3E),
+        shadowElevation = if (isSelected) 8.dp else 0.dp
+    ) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
+        ) {
+            Icon(
+                painter = painterResource(id = R.drawable.priorityflag),
+                contentDescription = null,
+                tint = if (isSelected) Color.White else Color.White.copy(alpha = 0.6f),
+                modifier = Modifier.size(24.dp)
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = number.toString(),
+                color = if (isSelected) Color.White else Color.White.copy(alpha = 0.6f),
+                fontSize = 16.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+            )
+        }
+    }
+
+    LaunchedEffect(pressed) {
+        if (pressed) {
+            delay(100)
+            pressed = false
+        }
+    }
+}
+
+@Composable
+fun EnhancedTaskPage(navController: NavController, taskViewModel: TaskViewModel, searchQuery: String) {
     val taskList by taskViewModel.taskList.collectAsState()
-    Log.d("TaskPage", "Task list size in Composable: ${taskList.size}")
     val task = navController.previousBackStackEntry?.savedStateHandle?.get<String>("task")
     val description = navController.previousBackStackEntry?.savedStateHandle?.get<String>("description")
     val selectedDate = navController.previousBackStackEntry?.savedStateHandle?.get<String>("selectedDate")
     val selectedTime = navController.previousBackStackEntry?.savedStateHandle?.get<String>("selectedTime")
     val priorityFlag = navController.previousBackStackEntry?.savedStateHandle?.get<Int>("priorityFlag")
     val userId = FirebaseAuth.getInstance().currentUser?.uid
-    Log.d("AddTask", "Task: $task, Description: $description, Priorityflag: $priorityFlag")
+
     LaunchedEffect(userId) {
         if (userId != null) {
             taskViewModel.loadUserTasks(userId)
@@ -1045,47 +1052,57 @@ fun TaskPage(navController: NavController, taskViewModel: TaskViewModel, searchQ
     }
 
     LaunchedEffect(task) {
-        task?.let { it ->
+        task?.let {
             if (taskList.none { it.task == task }) {
-                if (description != null) {
-                    if (userId != null) {
-                        taskViewModel.addTask(it, description, selectedDate ?: "", selectedTime ?: "", priorityFlag, category = "", userId =userId )
-                    }
+                if (description != null && userId != null) {
+                    taskViewModel.addTask(it, description, selectedDate ?: "", selectedTime ?: "", priorityFlag, category = "", userId = userId)
                 }
             }
         }
     }
-    val filteredTasks= if(searchQuery.isNotBlank()){
+
+    val filteredTasks = if (searchQuery.isNotBlank()) {
         taskList.filter {
-            it.task.contains(searchQuery, ignoreCase = true)||
+            it.task.contains(searchQuery, ignoreCase = true) ||
                     it.date.contains(searchQuery, ignoreCase = true)
         }
-    }else{
+    } else {
         taskList
     }
+
     if (taskList.isEmpty()) {
-        Text(
-            text = "No tasks available.",
-            color = Color.White,
+        EnhancedEmptyPage()
+    } else {
+        LazyColumn(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
-        )
-    }else {
-        LazyColumn(modifier = Modifier.fillMaxWidth(), horizontalAlignment = Alignment.CenterHorizontally) {
+                .padding(horizontal = 24.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            item { Spacer(modifier = Modifier.height(8.dp)) }
+
             items(filteredTasks, key = { it.id }) { taskItem ->
-                TaskRow(taskItem = taskItem, taskViewModel = taskViewModel, navController)
-                Spacer(modifier = Modifier.height(16.dp))
+                EnhancedTaskRow(
+                    taskItem = taskItem,
+                    taskViewModel = taskViewModel,
+                    navController = navController
+                )
             }
+
+            item { Spacer(modifier = Modifier.height(80.dp)) }
         }
     }
 }
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable
-fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel, navController: NavController) {
-    var showDescriptionDialog by remember { mutableStateOf(false) } // State for description dialog
-    var showDialog by remember { mutableStateOf(false) }
+fun EnhancedTaskRow(
+    taskItem: TaskItem,
+    taskViewModel: TaskViewModel,
+    navController: NavController
+) {
+    var showDescriptionDialog by remember { mutableStateOf(false) }
+    var showCategoryDialog by remember { mutableStateOf(false) }
     val dismissState = rememberDismissState { dismissValue ->
         when (dismissValue) {
             DismissValue.DismissedToStart -> {
@@ -1093,81 +1110,44 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel, navController: Nav
                 true
             }
             DismissValue.DismissedToEnd -> {
-                showDialog = true
+                showCategoryDialog = true
                 false
             }
             else -> false
         }
     }
 
-    if (showDialog) {
-        CategorySelectionDialog(
-            onDismiss = { showDialog = false },
+    if (showCategoryDialog) {
+        EnhancedCategoryDialog(
+            onDismiss = { showCategoryDialog = false },
             onCategorySelected = { category ->
                 taskViewModel.updateTask(taskItem.copy(category = category))
-            },
-            navController = navController
+                showCategoryDialog = false
+            }
         )
     }
+
     if (showDescriptionDialog) {
-        Dialog(onDismissRequest = { showDescriptionDialog = false }) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .height(225.dp)
-                    .background(
-                        color = Color(0xFF363636),
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                    .padding(16.dp)
-            ) {
-                Column(
-                    verticalArrangement = Arrangement.SpaceBetween,
-                    modifier = Modifier.fillMaxSize()
-                ) {
-                    Text(
-                        text = "Task Description",
-                        color = Color.White,
-                        style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.Bold)
-                    )
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Text(
-                        text = taskItem.description ?: "No description available",
-                        color = Color.White,
-                        style = TextStyle(fontSize = 16.sp)
-                    )
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    // Confirm button
-                    TextButton(
-                        onClick = { showDescriptionDialog = false },
-                        modifier = Modifier.align(Alignment.End) // Align button to the right
-                    ) {
-                        Text(text = "OK", color = Color.White)
-                    }
-                }
-            }
-        }
+        EnhancedDescriptionDialog(
+            taskItem = taskItem,
+            onDismiss = { showDescriptionDialog = false }
+        )
     }
-
 
     SwipeToDismiss(
         state = dismissState,
-        directions = setOf(DismissDirection.StartToEnd,DismissDirection.EndToStart),
+        directions = setOf(DismissDirection.StartToEnd, DismissDirection.EndToStart),
         background = {
             val color = when (dismissState.dismissDirection) {
-                DismissDirection.StartToEnd -> Color.LightGray
-                DismissDirection.EndToStart -> Color.LightGray
+                DismissDirection.StartToEnd -> Color(0xFF8875FF).copy(alpha = 0.3f)
+                DismissDirection.EndToStart -> Color.Red.copy(alpha = 0.3f)
                 else -> Color.Transparent
             }
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-                    .background(color)
-                    .padding(horizontal = 16.dp),
+                    .background(color, shape = RoundedCornerShape(16.dp))
+                    .padding(horizontal = 24.dp),
                 contentAlignment = when (dismissState.dismissDirection) {
                     DismissDirection.StartToEnd -> Alignment.CenterStart
                     DismissDirection.EndToStart -> Alignment.CenterEnd
@@ -1179,168 +1159,160 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel, navController: Nav
                         painter = painterResource(id = R.drawable.edit),
                         contentDescription = "Edit",
                         tint = Color.White,
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.size(28.dp)
                     )
                     DismissDirection.EndToStart -> Icon(
                         imageVector = Icons.Default.Delete,
                         contentDescription = "Delete",
                         tint = Color.White,
-                        modifier = Modifier.padding(16.dp)
+                        modifier = Modifier.size(28.dp)
                     )
                     else -> Unit
                 }
             }
         },
         dismissContent = {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .background(Color(0xFF363636), shape = RoundedCornerShape(6.dp))
-                    .padding(16.dp)
-                    .clickable { showDescriptionDialog = true },
-                verticalAlignment = Alignment.CenterVertically
+            Surface(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                color = Color(0xFF1E1E2E),
+                shadowElevation = 4.dp
             ) {
-                //TODO: inspect and make changes to code as the ui isn't smooth yet
-                Box(
+                Row(
                     modifier = Modifier
-                        .size(16.dp)
-                        .clip(CircleShape)
-                        .background(if (taskItem.completed) Color(0xFF8875FF) else Color.Transparent) // Purple if completed, transparent otherwise
-                        .border(
-                            width = 1.dp,
-                            color = Color.White,
-                            shape = CircleShape
-                        )
-                        .clickable {
-                            taskViewModel.updateTask(taskItem.copy(completed = !taskItem.completed)) // Toggle the completed status
-                        },
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                Column {
-                    Text(
-                        text = taskItem.task,
-                        color = Color.White,
-                        style = TextStyle(fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                    )
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                        .fillMaxWidth()
+                        .clickable { showDescriptionDialog = true }
+                        .padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    // Completion checkbox
+                    Surface(
+                        modifier = Modifier
+                            .size(24.dp)
+                            .clickable {
+                                taskViewModel.updateTask(taskItem.copy(completed = !taskItem.completed))
+                            },
+                        shape = CircleShape,
+                        color = if (taskItem.completed) Color(0xFF8875FF) else Color.Transparent,
+                        border = if (!taskItem.completed) {
+                            androidx.compose.foundation.BorderStroke(2.dp, Color.White.copy(alpha = 0.3f))
+                        } else null
                     ) {
-                        Text(
-                            text = "${taskItem.date} at ${taskItem.time}",
-                            color = Color.White,
-                            style = TextStyle(fontSize = 14.sp, fontWeight = FontWeight.Medium)
-                        )
-                        Row {
-                            if (taskItem.category?.isNotEmpty() == true) {
-                                val (categoryIcon, categoryColor) = when (taskItem.category) {
-                                    "Grocery" -> Pair(
-                                        painterResource(id = R.drawable.grocery),
-                                        Color(0xFFCCFF80)
-                                    )
-
-                                    "Work" -> Pair(
-                                        painterResource(id = R.drawable.work),
-                                        Color(0xFFFF9680)
-                                    )
-
-                                    "Sport" -> Pair(
-                                        painterResource(id = R.drawable.sport),
-                                        Color(0xFF80FFFF)
-                                    )
-
-                                    "Design" -> Pair(
-                                        painterResource(id = R.drawable.design),
-                                        Color(0xFF80FFD9)
-                                    )
-
-                                    "University" -> Pair(
-                                        painterResource(id = R.drawable.university),
-                                        Color(0xFF809CFF)
-                                    )
-
-                                    "Social" -> Pair(
-                                        painterResource(id = R.drawable.social),
-                                        Color(0xFFFF80EB)
-                                    )
-
-                                    "Music" -> Pair(
-                                        painterResource(id = R.drawable.music),
-                                        Color(0xFFFC80FF)
-                                    )
-
-                                    "Health" -> Pair(
-                                        painterResource(id = R.drawable.health),
-                                        Color(0xFF80FFA3)
-                                    )
-
-                                    "Movie" -> Pair(
-                                        painterResource(id = R.drawable.movie),
-                                        Color(0xFF80D1FF)
-                                    )
-
-                                    "Home" -> Pair(
-                                        painterResource(id = R.drawable.homeicon),
-                                        Color(0xFFFFCC80)
-                                    )
-
-                                    else -> Pair(
-                                        painterResource(id = R.drawable.profileicon),
-                                        Color.Gray
-                                    )
-                                }
-                                Row(
-                                    modifier = Modifier
-                                        .height(29.dp)
-                                        .background(categoryColor, shape = RoundedCornerShape(8.dp))
-                                        .padding(8.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Icon(
-                                        painter = categoryIcon,
-                                        contentDescription = taskItem.category,
-//                                        tint = Color.White,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                    Spacer(modifier = Modifier.width(8.dp))
-                                    Text(
-                                        text = taskItem.category ?: "",
-                                        color = Color.Black,
-                                        style = TextStyle(
-                                            fontSize = 12.sp,
-                                            fontWeight = FontWeight.Medium
-                                        )
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
+                        if (taskItem.completed) {
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Check,
+                                    contentDescription = "Completed",
+                                    tint = Color.White,
+                                    modifier = Modifier.size(16.dp)
+                                )
                             }
-                            
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.width(16.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = taskItem.task,
+                            color = if (taskItem.completed) Color.White.copy(alpha = 0.5f) else Color.White,
+                            style = TextStyle(
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium
+                            )
+                        )
+
+                        Spacer(modifier = Modifier.height(4.dp))
+
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
                             Row(
-                                modifier = Modifier
-                                    .width(42.dp)
-                                    .height(29.dp)
-                                    .background(Color(0xFF363636))
-                                    .border(
-                                        width = 1.dp,
-                                        color = Color(0xFF8875FF),
-                                        shape = RoundedCornerShape(4.dp)
-                                    )
-                                    .clip(RoundedCornerShape(8.dp)),
-                                horizontalArrangement = Arrangement.Center,
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Image(
-                                    painter = painterResource(id = R.drawable.priorityflag),
+                                Icon(
+                                    imageVector = Icons.Default.DateRange,
                                     contentDescription = null,
+                                    tint = Color.White.copy(alpha = 0.5f),
                                     modifier = Modifier.size(14.dp)
                                 )
                                 Spacer(modifier = Modifier.width(4.dp))
                                 Text(
-                                    text = "${taskItem.priorityFlag}",
-                                    color = Color.White,
-                                    style = TextStyle(fontSize = 12.sp),
+                                    text = "${taskItem.date} • ${taskItem.time}",
+                                    color = Color.White.copy(alpha = 0.5f),
+                                    style = TextStyle(
+                                        fontSize = 12.sp
+                                    )
                                 )
+                            }
+
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                // Category badge
+                                if (!taskItem.category.isNullOrEmpty()) {
+                                    val (categoryIcon, categoryColor) = getCategoryIconAndColor(taskItem.category)
+
+                                    Surface(
+                                        shape = RoundedCornerShape(8.dp),
+                                        color = categoryColor
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            Icon(
+                                                painter = categoryIcon,
+                                                contentDescription = taskItem.category,
+                                                modifier = Modifier.size(14.dp),
+                                                tint = Color.Unspecified
+                                            )
+                                            Spacer(modifier = Modifier.width(4.dp))
+                                            Text(
+                                                text = taskItem.category ?: "",
+                                                color = Color.Black,
+                                                style = TextStyle(
+                                                    fontSize = 10.sp,
+                                                    fontWeight = FontWeight.Medium
+                                                )
+                                            )
+                                        }
+                                    }
+                                }
+
+                                // Priority badge
+                                Surface(
+                                    shape = RoundedCornerShape(8.dp),
+                                    color = Color(0xFF2A2A3E),
+                                    border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFF8875FF))
+                                ) {
+                                    Row(
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                        verticalAlignment = Alignment.CenterVertically
+                                    ) {
+                                        Icon(
+                                            painter = painterResource(id = R.drawable.priorityflag),
+                                            contentDescription = null,
+                                            tint = Color(0xFF8875FF),
+                                            modifier = Modifier.size(12.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(4.dp))
+                                        Text(
+                                            text = "${taskItem.priorityFlag}",
+                                            color = Color.White,
+                                            style = TextStyle(
+                                                fontSize = 10.sp,
+                                                fontWeight = FontWeight.Medium
+                                            )
+                                        )
+                                    }
+                                }
                             }
                         }
                     }
@@ -1351,163 +1323,347 @@ fun TaskRow(taskItem: TaskItem, taskViewModel: TaskViewModel, navController: Nav
 }
 
 @Composable
-fun CategorySelectionDialog(onDismiss: () -> Unit, onCategorySelected: (String) -> Unit, navController: NavController) {
-    val groceryIcon= painterResource(id = R.drawable.grocery)
-    val workIcon= painterResource(id = R.drawable.work)
-    val sportIcon= painterResource(id = R.drawable.sport)
-    val designIcon= painterResource(id = R.drawable.design)
-    val universityIcon= painterResource(id = R.drawable.university)
-    val socialIcon= painterResource(id = R.drawable.social)
-    val musicIcon= painterResource(id = R.drawable.music)
-    val healthIcon= painterResource(id = R.drawable.health)
-    val movieIcon= painterResource(id = R.drawable.movie)
-    val homeIcon= painterResource(id = R.drawable.homeicon)
-
-    AlertDialog(
-        onDismissRequest = { onDismiss() },
-        buttons = {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth(0.9f)
-                    .height(556.dp)
-                    .background(
-                        Color(0xFF363636),
-                        shape = RoundedCornerShape(16.dp)
-                    )
-                    .padding(16.dp)
-            ) {
-                Column {
-                    Text(
-                        text = "Select Category",
-                        textAlign = TextAlign.Center,
-                        color = Color.White,
-                        modifier = Modifier.padding(bottom = 16.dp)
-                    )
-                    CategoryRow(
-                        listOf(
-                            Triple("Grocery", groceryIcon, Color(0xFFCCFF80)),
-                            Triple("Work", workIcon, Color(0xFFFF9680)),
-                            Triple("Sport", sportIcon, Color(0xFF80FFFF))
-                        ), onCategorySelected, navController
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    CategoryRow(
-                        listOf(
-                            Triple("Design", designIcon, Color(0xFF80FFD9)),
-                            Triple("University", universityIcon, Color(0xFF809CFF)),
-                            Triple("Social", socialIcon, Color(0xFFFF80EB))
-                        ), onCategorySelected, navController
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    CategoryRow(
-                        listOf(
-                            Triple("Music", musicIcon, Color(0xFFFC80FF)),
-                            Triple("Health", healthIcon, Color(0xFF80FFA3)),
-                            Triple("Movie", movieIcon, Color(0xFF80D1FF))
-                        ), onCategorySelected, navController
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    CategoryRow(
-                        listOf(
-                            Triple("Home", homeIcon, Color(0xFFFFCC80))
-                        ), onCategorySelected, navController
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(0.9f)
-                    ) {
-                        CancelButton(onDismiss)
-                    }
-                }
-            }
-        },
-        backgroundColor = Color.Transparent
-    )
+fun getCategoryIconAndColor(category: String?): Pair<Painter, Color> {
+    return when (category) {
+        "Grocery" -> Pair(painterResource(id = R.drawable.grocery), Color(0xFFCCFF80))
+        "Work" -> Pair(painterResource(id = R.drawable.work), Color(0xFFFF9680))
+        "Sport" -> Pair(painterResource(id = R.drawable.sport), Color(0xFF80FFFF))
+        "Design" -> Pair(painterResource(id = R.drawable.design), Color(0xFF80FFD9))
+        "University" -> Pair(painterResource(id = R.drawable.university), Color(0xFF809CFF))
+        "Social" -> Pair(painterResource(id = R.drawable.social), Color(0xFFFF80EB))
+        "Music" -> Pair(painterResource(id = R.drawable.music), Color(0xFFFC80FF))
+        "Health" -> Pair(painterResource(id = R.drawable.health), Color(0xFF80FFA3))
+        "Movie" -> Pair(painterResource(id = R.drawable.movie), Color(0xFF80D1FF))
+        "Home" -> Pair(painterResource(id = R.drawable.homeicon), Color(0xFFFFCC80))
+        else -> Pair(painterResource(id = R.drawable.profileicon), Color.Gray)
+    }
 }
 
 @Composable
-fun CategoryRow(categories: List<Triple<String, Painter, Color>>, onCategorySelected: (String) -> Unit, navController: NavController) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        categories.forEach { (category, icon, backgroundColor) ->
-            CategoryItem(
-                category = category,
-                icon = icon,
-                backgroundColor = backgroundColor,
-                onCategorySelected = onCategorySelected,
-                navController = navController
-            )
+fun EnhancedDescriptionDialog(taskItem: TaskItem, onDismiss: () -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
+            modifier = Modifier
+                .fillMaxWidth(0.9f)
+                .wrapContentHeight(),
+            shape = RoundedCornerShape(24.dp),
+            color = Color(0xFF1E1E2E),
+            shadowElevation = 16.dp
+        ) {
+            Column(
+                modifier = Modifier.padding(24.dp)
+            ) {
+                Text(
+                    text = "Task Details",
+                    style = TextStyle(
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        letterSpacing = 0.5.sp
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Text(
+                    text = taskItem.task,
+                    style = TextStyle(
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        color = Color(0xFF8875FF)
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Text(
+                    text = taskItem.description ?: "No description available",
+                    style = TextStyle(
+                        fontSize = 16.sp,
+                        color = Color.White.copy(alpha = 0.7f),
+                        lineHeight = 24.sp
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                EnhancedGradientButton(
+                    text = "Close",
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
     }
 }
 
 @Composable
-fun CategoryItem(category: String, icon: Painter, backgroundColor: Color, onCategorySelected: (String) -> Unit, navController: NavController) {
-    Column(
-        modifier = Modifier
-            .width(64.dp)
-            .height(90.dp)
-            .clickable {
-                onCategorySelected(category)
-                navController.navigate("TaskPage")
-            }
-    ) {
-        Column(
+fun EnhancedCategoryDialog(onDismiss: () -> Unit, onCategorySelected: (String) -> Unit) {
+    Dialog(onDismissRequest = onDismiss) {
+        Surface(
             modifier = Modifier
-                .fillMaxWidth()
-                .height(64.dp)
-                .background(
-                    backgroundColor,
-                    shape = RoundedCornerShape(16.dp)
-                ),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
+                .fillMaxWidth(0.9f)
+                .wrapContentHeight(),
+            shape = RoundedCornerShape(24.dp),
+            color = Color(0xFF1E1E2E),
+            shadowElevation = 16.dp
         ) {
-            Image(
-                painter = icon,
-                contentDescription = null,
-                modifier = Modifier
-                    .width(25.98.dp)
-                    .height(22.dp)
-            )
+            Column(
+                modifier = Modifier.padding(24.dp)
+            ) {
+                Text(
+                    text = "Choose Category",
+                    style = TextStyle(
+                        fontSize = 24.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = Color.White,
+                        letterSpacing = 0.5.sp
+                    )
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                val categories = listOf(
+                    listOf(
+                        Triple("Grocery", R.drawable.grocery, Color(0xFFCCFF80)),
+                        Triple("Work", R.drawable.work, Color(0xFFFF9680)),
+                        Triple("Sport", R.drawable.sport, Color(0xFF80FFFF))
+                    ),
+                    listOf(
+                        Triple("Design", R.drawable.design, Color(0xFF80FFD9)),
+                        Triple("University", R.drawable.university, Color(0xFF809CFF)),
+                        Triple("Social", R.drawable.social, Color(0xFFFF80EB))
+                    ),
+                    listOf(
+                        Triple("Music", R.drawable.music, Color(0xFFFC80FF)),
+                        Triple("Health", R.drawable.health, Color(0xFF80FFA3)),
+                        Triple("Movie", R.drawable.movie, Color(0xFF80D1FF))
+                    ),
+                    listOf(
+                        Triple("Home", R.drawable.homeicon, Color(0xFFFFCC80))
+                    )
+                )
+
+                categories.forEach { row ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        row.forEach { (name, icon, color) ->
+                            EnhancedCategoryItem(
+                                name = name,
+                                icon = painterResource(id = icon),
+                                color = color,
+                                onClick = { onCategorySelected(name) },
+                                modifier = Modifier.weight(1f)
+                            )
+                        }
+                        repeat(3 - row.size) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                EnhancedOutlinedButton(
+                    text = "Cancel",
+                    onClick = onDismiss,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
         }
-        Spacer(modifier = Modifier.height(5.dp))
+    }
+}
+
+@Composable
+fun EnhancedCategoryItem(
+    name: String,
+    icon: Painter,
+    color: Color,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.9f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+    )
+
+    Column(
+        modifier = modifier.scale(scale),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Surface(
+            onClick = {
+                pressed = true
+                onClick()
+            },
+            modifier = Modifier
+                .aspectRatio(1f)
+                .fillMaxWidth(),
+            shape = RoundedCornerShape(16.dp),
+            color = color
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.fillMaxSize()
+            ) {
+                Icon(
+                    painter = icon,
+                    contentDescription = name,
+                    modifier = Modifier.size(32.dp),
+                    tint = Color.Unspecified
+                )
+            }
+        }
+
+        Spacer(modifier = Modifier.height(8.dp))
+
         Text(
-            text = category,
+            text = name,
             color = Color.White,
             style = TextStyle(
-                fontSize = 14.sp,
+                fontSize = 12.sp,
                 fontWeight = FontWeight.Medium
             ),
             textAlign = TextAlign.Center
         )
     }
+
+    LaunchedEffect(pressed) {
+        if (pressed) {
+            delay(100)
+            pressed = false
+        }
+    }
+}
+
+// Reusable Enhanced Components
+
+@Composable
+fun EnhancedGradientButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    enabled: Boolean = true
+) {
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.95f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+    )
+
+    Surface(
+        onClick = {
+            if (enabled) {
+                pressed = true
+                onClick()
+            }
+        },
+        modifier = modifier
+            .scale(scale)
+            .height(56.dp),
+        shape = RoundedCornerShape(16.dp),
+        color = Color.Transparent,
+        enabled = enabled
+    ) {
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    if (enabled) {
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                Color(0xFF8875FF),
+                                Color(0xFFA890FF)
+                            )
+                        )
+                    } else {
+                        Brush.horizontalGradient(
+                            colors = listOf(
+                                Color.Gray.copy(alpha = 0.5f),
+                                Color.Gray.copy(alpha = 0.5f)
+                            )
+                        )
+                    }
+                ),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = text,
+                style = TextStyle(
+                    color = if (enabled) Color.White else Color.White.copy(alpha = 0.5f),
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.sp
+                )
+            )
+        }
+    }
+
+    LaunchedEffect(pressed) {
+        if (pressed) {
+            delay(100)
+            pressed = false
+        }
+    }
 }
 
 @Composable
-fun CancelButton(onDismiss: () -> Unit) {
-    Column(
-        modifier = Modifier
-            .width(153.dp)
-            .background(Color(0xFF8875FF), shape = RoundedCornerShape(10.dp))
-            .padding(horizontal = 25.dp)
-            .height(40.dp)
-            .clickable {
-                onDismiss()
-            },
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Text(
-            text = "Cancel",
-            style = TextStyle(
-                color = Color.White,
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium
+fun EnhancedOutlinedButton(
+    text: String,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    var pressed by remember { mutableStateOf(false) }
+    val scale by animateFloatAsState(
+        targetValue = if (pressed) 0.95f else 1f,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+    )
+
+    Surface(
+        onClick = {
+            pressed = true
+            onClick()
+        },
+        modifier = modifier
+            .scale(scale)
+            .height(56.dp)
+            .border(
+                width = 2.dp,
+                brush = Brush.horizontalGradient(
+                    colors = listOf(
+                        Color(0xFF8875FF),
+                        Color(0xFFA890FF)
+                    )
+                ),
+                shape = RoundedCornerShape(16.dp)
             ),
-            textAlign = TextAlign.Center
-        )
+        shape = RoundedCornerShape(16.dp),
+        color = Color.Transparent
+    ) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = text,
+                style = TextStyle(
+                    color = Color.White,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    letterSpacing = 1.sp
+                )
+            )
+        }
+    }
+
+    LaunchedEffect(pressed) {
+        if (pressed) {
+            delay(100)
+            pressed = false
+        }
     }
 }
