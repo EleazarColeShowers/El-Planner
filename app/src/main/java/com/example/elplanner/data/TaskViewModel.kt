@@ -37,12 +37,10 @@ class TaskViewModel(
 
     fun loadUserTasks(userId: String) {
         viewModelScope.launch {
-            // First, fetch tasks from the Room database
             repository.getUserTasks(userId).collect { tasks ->
                 taskList.value = tasks
             }
 
-            // Then, fetch tasks from Firebase Realtime Database
             val databaseRef = FirebaseDatabase.getInstance().getReference("users/$userId/tasks")
             databaseRef.addValueEventListener(object : ValueEventListener {
                 override fun onDataChange(snapshot: DataSnapshot) {

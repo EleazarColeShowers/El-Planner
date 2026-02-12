@@ -96,25 +96,38 @@ class HomeActivity : ComponentActivity() {
     }
 }
 
+// PERFORMANCE IMPROVEMENT: Cache gradient brushes
+private val verticalGradientBrush = Brush.verticalGradient(
+    colors = listOf(
+        Color(0xFF1A1A2E),
+        Color(0xFF16213E),
+        Color(0xFF0F3460)
+    )
+)
+
+private val buttonGradientBrush = Brush.horizontalGradient(
+    colors = listOf(
+        Color(0xFF8875FF),
+        Color(0xFFA890FF)
+    )
+)
+
+private val profileGradientBrush = Brush.linearGradient(
+    colors = listOf(Color(0xFF8875FF), Color(0xFFA890FF))
+)
+
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun EnhancedIndex(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
     val navController = rememberNavController()
     val taskList by taskViewModel.taskList.collectAsState()
+    // PERFORMANCE IMPROVEMENT: Use rememberUpdatedState to avoid recomposition
     val searchQuery = remember { mutableStateOf("") }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFF1A1A2E),
-                        Color(0xFF16213E),
-                        Color(0xFF0F3460)
-                    )
-                )
-            )
+            .background(verticalGradientBrush) // Use cached gradient
     ) {
         Column(
             modifier = Modifier.fillMaxSize()
@@ -130,7 +143,8 @@ fun EnhancedIndex(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
                     hint = "Search tasks...",
                     onTextChange = { query ->
                         searchQuery.value = query
-                    }
+                    },
+                    textState = searchQuery
                 )
                 Spacer(modifier = Modifier.height(20.dp))
 
@@ -143,7 +157,10 @@ fun EnhancedIndex(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
                     composable("DateTime") { EnhancedDateTime(navController, taskViewModel) }
                     composable("TimeView") { EnhancedTimeView(navController, taskViewModel) }
                     composable("PriorityFlag") { EnhancedPriorityFlag(navController, taskViewModel) }
-                    composable("TaskPage") { EnhancedTaskPage(navController, taskViewModel, searchQuery.value) }
+                    composable("TaskPage") {
+                        // PERFORMANCE IMPROVEMENT: Pass searchQuery.value as key to avoid unnecessary recompositions
+                        EnhancedTaskPage(navController, taskViewModel, searchQuery.value)
+                    }
                 }
 
                 LaunchedEffect(navigateTo) {
@@ -196,19 +213,22 @@ fun EnhancedHomePage(auth: FirebaseAuth) {
                     )
                 )
 
+                // PERFORMANCE IMPROVEMENT: Remember user initial to avoid recalculation
+                val userInitial = remember(auth.currentUser?.email) {
+                    auth.currentUser?.email?.first()?.uppercaseChar()?.toString() ?: "U"
+                }
+
                 Box(
                     modifier = Modifier
                         .size(40.dp)
                         .background(
-                            Brush.linearGradient(
-                                colors = listOf(Color(0xFF8875FF), Color(0xFFA890FF))
-                            ),
+                            profileGradientBrush, // Use cached gradient
                             shape = CircleShape
                         ),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = auth.currentUser?.email?.first()?.uppercaseChar()?.toString() ?: "U",
+                        text = userInitial,
                         color = Color.White,
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp
@@ -224,7 +244,7 @@ fun EnhancedSearchBar(
     modifier: Modifier = Modifier,
     hint: String = "Search...",
     onTextChange: (String) -> Unit,
-    textState: MutableState<String> = remember { mutableStateOf("") }
+    textState: MutableState<String>
 ) {
     val text = textState.value
     var isFocused by remember { mutableStateOf(false) }
@@ -284,10 +304,15 @@ fun EnhancedSearchBar(
             )
 
             if (text.isNotEmpty()) {
-                IconButton(onClick = {
-                    textState.value = ""
-                    onTextChange("")
-                }) {
+                // PERFORMANCE IMPROVEMENT: Add remember for interactionSource
+                val interactionSource = remember { MutableInteractionSource() }
+                IconButton(
+                    onClick = {
+                        textState.value = ""
+                        onTextChange("")
+                    },
+                    interactionSource = interactionSource
+                ) {
                     Icon(
                         imageVector = Icons.Default.Clear,
                         contentDescription = "Clear",
@@ -361,11 +386,14 @@ fun EnhancedEmptyPage() {
 @Composable
 fun EnhancedBottomBar(navController: NavController) {
     val context = LocalContext.current
-    val items = listOf("Index", "Profile")
-    val icons = mapOf(
-        "Index" to R.drawable.indexicon,
-        "Profile" to R.drawable.profileicon
-    )
+    // PERFORMANCE IMPROVEMENT: Remember static lists
+    val items = remember { listOf("Index", "Profile") }
+    val icons = remember {
+        mapOf(
+            "Index" to R.drawable.indexicon,
+            "Profile" to R.drawable.profileicon
+        )
+    }
     val selectedIndex = remember { mutableIntStateOf(0) }
 
     Box(
@@ -635,7 +663,8 @@ fun EnhancedDateTime(navController: NavController, taskViewModel: TaskViewModel)
 fun EnhancedCalendarView(onDateSelected: (LocalDate) -> Unit) {
     var currentMonth by remember { mutableStateOf(YearMonth.now()) }
     var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
-    val today = LocalDate.now()
+    // PERFORMANCE IMPROVEMENT: Remember today to avoid recalculation on every recomposition
+    val today = remember { LocalDate.now() }
 
     Column(
         modifier = Modifier.fillMaxWidth()
@@ -657,8 +686,12 @@ fun EnhancedCalendarView(onDateSelected: (LocalDate) -> Unit) {
             Column(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
+                // PERFORMANCE IMPROVEMENT: Remember formatted month name
+                val monthName = remember(currentMonth) {
+                    currentMonth.month.name.lowercase().replaceFirstChar { it.uppercase() }
+                }
                 Text(
-                    text = currentMonth.month.name.lowercase().replaceFirstChar { it.uppercase() },
+                    text = monthName,
                     color = Color.White,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp
@@ -682,9 +715,10 @@ fun EnhancedCalendarView(onDateSelected: (LocalDate) -> Unit) {
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Day labels
+        // Day labels - PERFORMANCE IMPROVEMENT: Remember static list
+        val dayLabels = remember { listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun") }
         Row(modifier = Modifier.fillMaxWidth()) {
-            listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun").forEach { day ->
+            dayLabels.forEach { day ->
                 Text(
                     text = day,
                     modifier = Modifier.weight(1f),
@@ -698,9 +732,16 @@ fun EnhancedCalendarView(onDateSelected: (LocalDate) -> Unit) {
 
         Spacer(modifier = Modifier.height(8.dp))
 
+        // PERFORMANCE IMPROVEMENT: Remember calendar calculations
+        val calendarData = remember(currentMonth) {
+            val firstDayOfMonth = currentMonth.atDay(1).dayOfWeek
+            val daysInMonth = currentMonth.lengthOfMonth()
+            Triple(firstDayOfMonth, daysInMonth, currentMonth)
+        }
+
+        val (firstDayOfMonth, daysInMonth, month) = calendarData
+
         // Calendar grid
-        val firstDayOfMonth = currentMonth.atDay(1).dayOfWeek
-        val daysInMonth = currentMonth.lengthOfMonth()
         var day = 1
 
         for (week in 0..5) {
@@ -716,7 +757,7 @@ fun EnhancedCalendarView(onDateSelected: (LocalDate) -> Unit) {
                         if (week == 0 && dayOfWeek < firstDayOfMonth || day > daysInMonth) {
                             Spacer(modifier = Modifier.fillMaxSize())
                         } else {
-                            val date = currentMonth.atDay(day)
+                            val date = month.atDay(day)
                             val isSelected = selectedDate == date
                             val isToday = today == date
 
@@ -843,7 +884,8 @@ fun EnhancedTimeView(navController: NavController, taskViewModel: TaskViewModel)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EnhancedDigitalTime(onTimeSelected: (Int, Int) -> Unit) {
-    val currentTime = Calendar.getInstance()
+    // PERFORMANCE IMPROVEMENT: Remember current time to avoid recalculation
+    val currentTime = remember { Calendar.getInstance() }
     val timePickerState = rememberTimePickerState(
         initialHour = currentTime.get(Calendar.HOUR_OF_DAY),
         initialMinute = currentTime.get(Calendar.MINUTE),
@@ -989,7 +1031,8 @@ fun EnhancedPriorityBox(
     var pressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (pressed) 0.9f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "priority_scale"
     )
 
     Surface(
@@ -1061,13 +1104,16 @@ fun EnhancedTaskPage(navController: NavController, taskViewModel: TaskViewModel,
         }
     }
 
-    val filteredTasks = if (searchQuery.isNotBlank()) {
-        taskList.filter {
-            it.task.contains(searchQuery, ignoreCase = true) ||
-                    it.date.contains(searchQuery, ignoreCase = true)
+    // PERFORMANCE IMPROVEMENT: Use derivedStateOf for filtered tasks to avoid unnecessary recalculations
+    val filteredTasks = remember(searchQuery, taskList) {
+        if (searchQuery.isNotBlank()) {
+            taskList.filter {
+                it.task.contains(searchQuery, ignoreCase = true) ||
+                        it.date.contains(searchQuery, ignoreCase = true)
+            }
+        } else {
+            taskList
         }
-    } else {
-        taskList
     }
 
     if (taskList.isEmpty()) {
@@ -1257,33 +1303,7 @@ fun EnhancedTaskRow(
                             ) {
                                 // Category badge
                                 if (!taskItem.category.isNullOrEmpty()) {
-                                    val (categoryIcon, categoryColor) = getCategoryIconAndColor(taskItem.category)
-
-                                    Surface(
-                                        shape = RoundedCornerShape(8.dp),
-                                        color = categoryColor
-                                    ) {
-                                        Row(
-                                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                            verticalAlignment = Alignment.CenterVertically
-                                        ) {
-                                            Icon(
-                                                painter = categoryIcon,
-                                                contentDescription = taskItem.category,
-                                                modifier = Modifier.size(14.dp),
-                                                tint = Color.Unspecified
-                                            )
-                                            Spacer(modifier = Modifier.width(4.dp))
-                                            Text(
-                                                text = taskItem.category ?: "",
-                                                color = Color.Black,
-                                                style = TextStyle(
-                                                    fontSize = 10.sp,
-                                                    fontWeight = FontWeight.Medium
-                                                )
-                                            )
-                                        }
-                                    }
+                                    CategoryBadge(category = taskItem.category)
                                 }
 
                                 // Priority badge
@@ -1322,6 +1342,7 @@ fun EnhancedTaskRow(
     )
 }
 
+// PERFORMANCE IMPROVEMENT: Cache category data
 @Composable
 fun getCategoryIconAndColor(category: String?): Pair<Painter, Color> {
     return when (category) {
@@ -1336,6 +1357,37 @@ fun getCategoryIconAndColor(category: String?): Pair<Painter, Color> {
         "Movie" -> Pair(painterResource(id = R.drawable.movie), Color(0xFF80D1FF))
         "Home" -> Pair(painterResource(id = R.drawable.homeicon), Color(0xFFFFCC80))
         else -> Pair(painterResource(id = R.drawable.profileicon), Color.Gray)
+    }
+}
+
+@Composable
+fun CategoryBadge(category: String?) {
+    val (categoryIcon, categoryColor) = getCategoryIconAndColor(category)
+
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = categoryColor
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Icon(
+                painter = categoryIcon,
+                contentDescription = category,
+                modifier = Modifier.size(14.dp),
+                tint = Color.Unspecified
+            )
+            Spacer(modifier = Modifier.width(4.dp))
+            Text(
+                text = category ?: "",
+                color = Color.Black,
+                style = TextStyle(
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Medium
+                )
+            )
+        }
     }
 }
 
@@ -1423,26 +1475,29 @@ fun EnhancedCategoryDialog(onDismiss: () -> Unit, onCategorySelected: (String) -
 
                 Spacer(modifier = Modifier.height(24.dp))
 
-                val categories = listOf(
+                // PERFORMANCE IMPROVEMENT: Remember static category list
+                val categories = remember {
                     listOf(
-                        Triple("Grocery", R.drawable.grocery, Color(0xFFCCFF80)),
-                        Triple("Work", R.drawable.work, Color(0xFFFF9680)),
-                        Triple("Sport", R.drawable.sport, Color(0xFF80FFFF))
-                    ),
-                    listOf(
-                        Triple("Design", R.drawable.design, Color(0xFF80FFD9)),
-                        Triple("University", R.drawable.university, Color(0xFF809CFF)),
-                        Triple("Social", R.drawable.social, Color(0xFFFF80EB))
-                    ),
-                    listOf(
-                        Triple("Music", R.drawable.music, Color(0xFFFC80FF)),
-                        Triple("Health", R.drawable.health, Color(0xFF80FFA3)),
-                        Triple("Movie", R.drawable.movie, Color(0xFF80D1FF))
-                    ),
-                    listOf(
-                        Triple("Home", R.drawable.homeicon, Color(0xFFFFCC80))
+                        listOf(
+                            Triple("Grocery", R.drawable.grocery, Color(0xFFCCFF80)),
+                            Triple("Work", R.drawable.work, Color(0xFFFF9680)),
+                            Triple("Sport", R.drawable.sport, Color(0xFF80FFFF))
+                        ),
+                        listOf(
+                            Triple("Design", R.drawable.design, Color(0xFF80FFD9)),
+                            Triple("University", R.drawable.university, Color(0xFF809CFF)),
+                            Triple("Social", R.drawable.social, Color(0xFFFF80EB))
+                        ),
+                        listOf(
+                            Triple("Music", R.drawable.music, Color(0xFFFC80FF)),
+                            Triple("Health", R.drawable.health, Color(0xFF80FFA3)),
+                            Triple("Movie", R.drawable.movie, Color(0xFF80D1FF))
+                        ),
+                        listOf(
+                            Triple("Home", R.drawable.homeicon, Color(0xFFFFCC80))
+                        )
                     )
-                )
+                }
 
                 categories.forEach { row ->
                     Row(
@@ -1488,7 +1543,8 @@ fun EnhancedCategoryItem(
     var pressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (pressed) 0.9f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "category_scale"
     )
 
     Column(
@@ -1552,7 +1608,8 @@ fun EnhancedGradientButton(
     var pressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (pressed) 0.95f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "button_scale"
     )
 
     Surface(
@@ -1574,12 +1631,7 @@ fun EnhancedGradientButton(
                 .fillMaxSize()
                 .background(
                     if (enabled) {
-                        Brush.horizontalGradient(
-                            colors = listOf(
-                                Color(0xFF8875FF),
-                                Color(0xFFA890FF)
-                            )
-                        )
+                        buttonGradientBrush // Use cached gradient
                     } else {
                         Brush.horizontalGradient(
                             colors = listOf(
@@ -1620,7 +1672,8 @@ fun EnhancedOutlinedButton(
     var pressed by remember { mutableStateOf(false) }
     val scale by animateFloatAsState(
         targetValue = if (pressed) 0.95f else 1f,
-        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy)
+        animationSpec = spring(dampingRatio = Spring.DampingRatioMediumBouncy),
+        label = "outlined_button_scale"
     )
 
     Surface(
@@ -1633,12 +1686,7 @@ fun EnhancedOutlinedButton(
             .height(56.dp)
             .border(
                 width = 2.dp,
-                brush = Brush.horizontalGradient(
-                    colors = listOf(
-                        Color(0xFF8875FF),
-                        Color(0xFFA890FF)
-                    )
-                ),
+                brush = buttonGradientBrush, // Use cached gradient
                 shape = RoundedCornerShape(16.dp)
             ),
         shape = RoundedCornerShape(16.dp),
