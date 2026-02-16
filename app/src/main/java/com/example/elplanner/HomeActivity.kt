@@ -80,6 +80,10 @@ class HomeActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         auth = FirebaseAuth.getInstance()
         taskViewModel = ViewModelProvider.getTaskViewModel(this)
+        val userId = auth.currentUser?.uid
+        if (userId != null) {
+            taskViewModel.loadUserTasks(userId)
+        }
 
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -148,10 +152,14 @@ fun EnhancedIndex(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
                 )
                 Spacer(modifier = Modifier.height(20.dp))
 
+                val startDestination by remember(taskList.isEmpty()) {
+                    mutableStateOf(if (taskList.isEmpty()) "EmptyPage" else "TaskPage")
+                }
+
                 NavHost(
                     navController = navController,
-                    startDestination = if (taskList.isEmpty()) "EmptyPage" else "TaskPage"
-                ) {
+                    startDestination = startDestination
+                ){
                     composable("EmptyPage") { EnhancedEmptyPage() }
                     composable("AddTask") { EnhancedAddTask(navController, taskViewModel) }
                     composable("DateTime") { EnhancedDateTime(navController, taskViewModel) }
@@ -163,11 +171,6 @@ fun EnhancedIndex(auth: FirebaseAuth, taskViewModel: TaskViewModel) {
                     }
                 }
 
-                LaunchedEffect(navigateTo) {
-                    if (navigateTo == "TaskPage") {
-                        navController.navigate("TaskPage")
-                    }
-                }
             }
             EnhancedBottomBar(navController)
         }
@@ -438,6 +441,7 @@ fun EnhancedBottomBar(navController: NavController) {
                             when (item) {
                                 "Profile" -> {
                                     val intent = Intent(context, ProfileActivity::class.java)
+                                    intent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                                     context.startActivity(intent)
                                 }
                                 "Index" -> {
@@ -1086,17 +1090,10 @@ fun EnhancedTaskPage(navController: NavController, taskViewModel: TaskViewModel,
     val priorityFlag = navController.previousBackStackEntry?.savedStateHandle?.get<Int>("priorityFlag")
     val userId = FirebaseAuth.getInstance().currentUser?.uid
 
-    LaunchedEffect(userId) {
-        if (userId != null) {
-            taskViewModel.loadUserTasks(userId)
-        } else {
-            navController.navigate("EmptyPage")
-        }
-    }
 
-    LaunchedEffect(task) {
+    LaunchedEffect(task, taskList.size) {
         task?.let {
-            if (taskList.none { it.task == task }) {
+            if (taskList.none { taskItem -> taskItem.task == task }) {
                 if (description != null && userId != null) {
                     taskViewModel.addTask(it, description, selectedDate ?: "", selectedTime ?: "", priorityFlag, category = "", userId = userId)
                 }
